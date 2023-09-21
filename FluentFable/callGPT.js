@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native'
-import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { StyleSheet, Text, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { CHATGPT_API_KEY } from '@env';
 
 
 const callGPT = ( {query} ) => {
@@ -11,7 +12,7 @@ const callGPT = ( {query} ) => {
     url: 'https://chatgpt-api8.p.rapidapi.com/',
     headers: {
       'content-type': 'application/json',
-      'X-RapidAPI-Key': 'c3bdcf3abdmsh01914843bcb0a61p12cd8djsnebf90ffde381',
+      'X-RapidAPI-Key': CHATGPT_API_KEY,
       'X-RapidAPI-Host': 'chatgpt-api8.p.rapidapi.com'
     },
     data: [
