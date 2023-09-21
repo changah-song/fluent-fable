@@ -1,26 +1,32 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import callGPT from './callGPT';
+import Homescreen from './screens/Homescreen';
+import Flashcard from './screens/Flashcard';
+
+import { FontAwesome5 } from '@expo/vector-icons';
+
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
-  const axios = require('axios');
-
-  const { data } = callGPT({query: 'List five cute animals.'})
-
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-      <Text>{data}</Text>
-    </View>
+    <NavigationContainer>
+      <Tab.Navigator 
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Read') {
+              iconName = 'book';
+            } else if (route.name === 'Learn') {
+              iconName = 'graduation-cap';
+            }
+            return <FontAwesome5 name={iconName} size={size} color={color} />;
+          },
+        })}>
+        <Tab.Screen name="Read" component={Homescreen} />
+        <Tab.Screen name="Learn" component={Flashcard} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
