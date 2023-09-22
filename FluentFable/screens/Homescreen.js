@@ -1,12 +1,16 @@
-import { StyleSheet, Text, View, Modal, Button } from 'react-native'
+import { StyleSheet, Text, View, Modal, Button, TextInput } from 'react-native'
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react'
 // import callGPT from '../components/callGPT';
+import Translator from 'react-native-translator'
 
 const Homescreen = () => {
   const axios = require('axios');
   const [modalVisible, setModalVisible] = useState(false);
   // const { data } = callGPT({query: 'List five cute animals.'})
+  const [value, setValue] = useState('');
+  const [result, setResult] = useState('');
+  const [text, setText] = useState('This is an example text that will be replaced \n by ChatGPT prompts in the future iterations.');
 
   const openModal = () => {
     setModalVisible(true);
@@ -16,14 +20,35 @@ const Homescreen = () => {
     setModalVisible(false);
   };
 
+  // const handleLongPress = (text) => {
+  //   setValue(text);
+  //   openModal();
+  //   console.log({value})
+  // };
+
+  const handleTextSelectionChange = (selection) => {
+    if (selection.start !== selection.end) {
+       const selectedContent = text.substring(selection.start, selection.end)
+       console.log(selectedContent)
+       setValue(selectedContent);
+       openModal();
+    }
+  } 
+
   return (
     <View style={styles.container}>
       <StatusBar style={styles.container} />
-      <Text 
-        selectable={false}
-        onLongPress={openModal}>
-          This is an example sentence!
-      </Text>
+      {/* <Text selectable={true} onSelect onPress={(text) => handleLongPress(text)}>
+          가위 바위 보라색
+      </Text> */}
+      <MyTextInput
+        multiline={true}
+        selectable={true}
+        onTextSelectionChange={handleTextSelectionChange}
+        value={text}
+        caretHidden={true}
+        inputMode="none"
+      />
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -31,7 +56,15 @@ const Homescreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text>Additional information goes here.</Text>
+            <View>
+              <Translator 
+                from="en"
+                to="ko"
+                value={value}
+                onTranslated={(t) => setResult(t)}  
+              />
+              <Text>{result}</Text>
+            </View>
             <View style={styles.buttonContainer}>
               <Button title="Save" onPress={closeModal} />
               <Button title="Close" onPress={closeModal} />
@@ -42,6 +75,14 @@ const Homescreen = () => {
     </View>
   );
 }
+
+const MyTextInput = ({ onTextSelectionChange, ...props }) => {
+  const handleTextSelectionChange = (e) => {
+    onTextSelectionChange(e.nativeEvent.selection);
+  };
+
+  return <TextInput {...props} onSelectionChange={handleTextSelectionChange} />;
+};
 
 export default Homescreen
 

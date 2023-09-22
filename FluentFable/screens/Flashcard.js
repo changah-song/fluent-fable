@@ -1,14 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { StyleSheet, Text, View, TextInput, Modal } from 'react-native'
+import React , { useState } from 'react'
 
 const Flashcard = () => {
   return (
-    <View>
-      <Text>Flashcard</Text>
-    </View>
+    <Text>Hi</Text>
   )
-}
+};
 
 export default Flashcard
-
-const styles = StyleSheet.create({})
