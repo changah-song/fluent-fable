@@ -6,6 +6,7 @@ import { CHATGPT_API_KEY } from '@env';
 
 const callGPT = ( {query} ) => {
   const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const options = {
     method: 'POST',
@@ -24,12 +25,15 @@ const callGPT = ( {query} ) => {
   };  
 
   const fetchData = async () => {    
+    setIsLoading(true);
     try {
       const response = await axios.request(options)
       console.log(response.data["text"])
       setData(response.data["text"])
     } catch(error) {
       console.error(error)
+    } finally {
+      setIsLoading(false);
     }
   };
 

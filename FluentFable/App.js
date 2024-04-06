@@ -1,6 +1,8 @@
 import Homescreen from './screens/Homescreen';
 import Flashcard from './screens/Flashcard';
 
+import LightUpText from './screens/LightUpText';
+
 import { FontAwesome5 } from '@expo/vector-icons';
 
 import React from 'react';
@@ -26,7 +28,7 @@ export default function App() {
               return <FontAwesome5 name={iconName} size={size} color={color} />;
             },
           })}>
-          <Tab.Screen name="Read" component={Homescreen} />
+          <Tab.Screen name="Read" component={LightUpText} />
           <Tab.Screen name="Learn" component={Flashcard} />
         </Tab.Navigator>
       </NavigationContainer>
