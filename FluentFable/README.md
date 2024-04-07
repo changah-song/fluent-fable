@@ -1,6 +1,7 @@
 To-do..
 
 04/07/2024
+- fixed blank space being highlighted at start
 - hid all API keys
 - got the toggle between dictionary and translate running successfully
 - looked into alternatives for google translate API (with limited calls)
@@ -15,6 +16,7 @@ To-do..
 
 todo:
 READING SCREEN
+- loading indication when translating...
 - remove korean particles from highlights (~하다, ~을/를, etc.)
 - use better translator API ✅
     - find better alternative
