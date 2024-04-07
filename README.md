@@ -5,4 +5,4 @@ This app aims to make the process of reading and learning as seamless as possibl
 
 << Provided Text, Easy Word Lookup, Flashcard Memorization >>
 
-![alt text](https://github.com/paul-song-minerva/fluent-fable/blob/main/FluentFable/assets/showcase.gif)
+![alt text](https://github.com/paul-song-minerva/fluent-fable/blob/main/FluentFable/assets/show_case.gif)
