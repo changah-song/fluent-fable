@@ -12,7 +12,9 @@ const TopSection = ({ highlightedWord }) => {
   return (
     <View style={styles.topSection}>
       <Text style={{ fontSize: 17 }}> {highlightedWord}</Text>
-      <Text>{ data.join("\n") }</Text>
+      {data && data.length > 0 && (
+        <Text>{ data.join("\n") }</Text>
+      )}
     </View>
   );
 };
