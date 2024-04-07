@@ -7,9 +7,12 @@ To-do..
 - rudimentary translator API that is very slow
 
 todo:
+- use better translator API ✅
 - remove korean particles from highlights (~하다, ~을/를, etc.)
 - web scraping and getting news
 - home page with list of categories for readings that the user can choose
+- add toggle for naver dictionary and google translate
+-----
 
 MVP
 - Database (expo sql) // done

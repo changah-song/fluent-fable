@@ -1,25 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
-import Translator from 'react-native-translator';
+import googleTranslate from '../components/googleTranslate';
 
-import axios from 'axios';
+import koreanDictionary from '../components/koreanDictionary';
 
 // Top section component
 const TopSection = ({ highlightedWord }) => {
-  const [translatedText, setTranslatedText] = useState("");
-
+  // const { data } = googleTranslate({query: highlightedWord});   #### WORKS, SAVE API CALL
+  const { data } = koreanDictionary({query: highlightedWord});
+  // const data = "placeholder";
   return (
     <View style={styles.topSection}>
-      <Text style={{ fontSize: 17 }}>
-        {highlightedWord}
-      </Text>
-      <Translator 
-        from="ko"
-        to="en"
-        value={highlightedWord}
-        onTranslated={(t) => setTranslatedText(t)}  
-      />
-      <Text>{translatedText}</Text>
+      <Text style={{ fontSize: 17 }}> {highlightedWord}</Text>
+      <Text>{ data.join("\n") }</Text>
     </View>
   );
 };
@@ -31,8 +24,6 @@ const LightUpText = () => {
   const handleWordPress = (word) => {
     setHighlightedWord(word);
   };
-
-  // const text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
   
   const words = text.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
 
