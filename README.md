@@ -1,6 +1,6 @@
 # fluent-fable
 
-run emulator : emulator -avd Pixel_7_Pro_API_33 -netdelay none -netspeed full
-install libraries : npm install
+Reading is the best way for language acquisition. 
+This app aims to make the process of reading and learning as seamless as possible.
 
-documentation for NewsAPI: https://newsapi.org/docs/endpoints/everything 
+<< Provided Text, Easy Word Lookup, Flashcard Memorization >>

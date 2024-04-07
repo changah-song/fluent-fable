@@ -1,5 +1,12 @@
 To-do..
 
+04/07/2024
+- hid all API keys
+- got the toggle between dictionary and translate running successfully
+- looked into alternatives for google translate API (with limited calls)
+- implemented Korean Dictionary API (unlimited calls, pretty fast)
+- the top view now displays the dictionary look-up
+
 04/06/2024
 - created a better way to view and interact with text.
     - top section for translation
@@ -7,11 +14,20 @@ To-do..
 - rudimentary translator API that is very slow
 
 todo:
-- use better translator API ✅
+READING SCREEN
 - remove korean particles from highlights (~하다, ~을/를, etc.)
+- use better translator API ✅
+    - find better alternative
 - web scraping and getting news
 - home page with list of categories for readings that the user can choose
-- add toggle for naver dictionary and google translate
+- add toggle for naver dictionary and google translate ✅
+
+USER LOGIN
+- google account first
+
+FLASHCARD SCREEN
+- create more extensive database layout...
+
 -----
 
 MVP

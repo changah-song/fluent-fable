@@ -1,9 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { GOOGLE_TRANSLATE_RAPIDAPI_KEY } from '@env';
 
 const googleTranslate = ( {query} ) => {
-  const [data, setData] = useState([]);
+  const [translatedData, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
   const options = {
@@ -11,7 +12,7 @@ const googleTranslate = ( {query} ) => {
     url: 'https://google-translator9.p.rapidapi.com/v2',
     headers: {
         'content-type': 'application/json',
-        'X-RapidAPI-Key': 'c3bdcf3abdmsh01914843bcb0a61p12cd8djsnebf90ffde381',
+        'X-RapidAPI-Key': GOOGLE_TRANSLATE_RAPIDAPI_KEY,
         'X-RapidAPI-Host': 'google-translator9.p.rapidapi.com'
     },
     data: {
@@ -39,7 +40,7 @@ const googleTranslate = ( {query} ) => {
     fetchData();
   }, [query]);
   
-  return { data };
+  return { translatedData };
 }
 
 export default googleTranslate

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-
+import {GENERAL_NEWS_API_KEY} from '@env';
 
 const callNews = ( {query} ) => {
     // const [fromDate, setFromDate] = useState(query[0]);
@@ -11,7 +11,7 @@ const callNews = ( {query} ) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const API_KEY = '7f6c3d9ca2c54b09a98bc0e12661b644';
+    const API_KEY = GENERAL_NEWS_API_KEY;
 
     const fetchData = async () => {    
         setIsLoading(true);

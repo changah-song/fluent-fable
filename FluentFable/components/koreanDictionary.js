@@ -1,16 +1,16 @@
 // API documentation: https://krdict.korean.go.kr/openApi/openApiInfo
-
 import { StyleSheet, Text, View } from 'react-native';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'react-xml-parser';
+import {KOREAN_DICTIONARY_CLIENT_ID} from '@env'
 
 const koreanDictionary = ( {query} ) => {
-    const [data, setData] = useState(null);
+    const [dictionaryData, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const client_id = '7E27A81804E9FC81111869F31589A71C';
+    const client_id = KOREAN_DICTIONARY_CLIENT_ID;
     const api_url = `https://krdict.korean.go.kr/api/search`;
 
     const options = {
@@ -51,8 +51,7 @@ const koreanDictionary = ( {query} ) => {
     useEffect(() => {
         fetchData();
     }, [query]);
-  
-  return { data };
+    return { dictionaryData };
 }
 
 export default koreanDictionary
