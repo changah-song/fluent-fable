@@ -16,6 +16,9 @@ To-do..
 
 todo:
 READING SCREEN
+- option to save word...
+- separate topsection from lightuptext, give it its own file and see if useEffect can work for the data
+- see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
 - loading indication when translating...
 - remove korean particles from highlights (~하다, ~을/를, etc.)
 - use better translator API ✅
@@ -23,9 +26,15 @@ READING SCREEN
 - web scraping and getting news
 - home page with list of categories for readings that the user can choose
 - add toggle for naver dictionary and google translate ✅
+- make the dictionary top section more detailed
+    - show origin and POS and don't show repeats..
+- touch onPress isn't as reactive as desired...
 
 USER LOGIN
 - google account first
+
+MODAL SCREEN
+- show network of connection of known words...  
 
 FLASHCARD SCREEN
 - create more extensive database layout...
