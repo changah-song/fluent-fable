@@ -1,11 +1,11 @@
 import Homescreen from './screens/Homescreen';
 import Flashcard from './screens/Flashcard';
-
 import LightUpText from './screens/LightUpText';
+import { createTable, deleteAllDataFromTable, getTableSchema, insertData, viewData } from './components/Database';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TranslatorProvider } from 'react-native-translator';
@@ -13,6 +13,21 @@ import { TranslatorProvider } from 'react-native-translator';
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  useEffect(() => {
+    createTable()
+      .then(() => deleteAllDataFromTable())
+      .then(() => createTable())
+      .then(() => getTableSchema())
+      .then(() => insertData())
+      .then(() => viewData())
+      .then(() => {
+        console.log('All functions completed.');
+      })
+      .catch((error) => {
+        console.log('Error:', error)
+      });
+  }, []);
+
   return (
     <TranslatorProvider>
       <NavigationContainer>

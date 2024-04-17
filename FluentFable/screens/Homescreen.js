@@ -6,8 +6,8 @@ import Translator from 'react-native-translator'
 import * as SQLite from 'expo-sqlite'
 
 // import news api component
-import callNews from '../components/callNews'
-import callKorean from '../components/callKorean'
+import callNews from '../components/news/callNews'
+import callKorean from '../components/news/callKorean'
 
 const Homescreen = () => {
   // required for GPT API call

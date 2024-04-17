@@ -1,6 +1,5 @@
 // can only be added once a package name has been created...
 // using temporary package name for now
-// new api documentation: https://newsapi.org/docs/endpoints/everything 
 
 import { StyleSheet, Text, View } from 'react-native';
 import { useState, useEffect } from 'react';

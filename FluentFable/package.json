@@ -24,7 +24,9 @@
     "react-native-screens": "~3.29.0",
     "react-native-translator": "^1.1.6",
     "react-native-webview": "13.6.4",
-    "react-xml-parser": "^1.1.8"
+    "react-xml-parser": "^1.1.8",
+    "expo-file-system": "~16.0.8",
+    "expo-asset": "~9.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

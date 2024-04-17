@@ -1,24 +1,41 @@
 import { Text, View } from 'react-native'
 import React , { useState, useEffect } from 'react'
-import * as SQLite from 'expo-sqlite'
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+
+import { viewData } from '../components/Database';
 
 const Flashcard = () => {
-  const db = SQLite.openDatabase('words.db')
-  const [words, setWords] = useState([])
+  const [words, setWords] = useState([]);
 
+  const fetchWords = () => {
+    viewData()
+      .then(data => {
+        setWords(data);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  };
   useEffect(() => {
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM words', null, 
-      (txObj, resultSet) => setWords(resultSet.rows._array),
-      (txOjb, error) => console.log(error))
-    });
-  });
+    fetchWords();
+  }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchWords(); // Fetch data whenever screen is focused
+    }, [])
+  );
+  
+  console.log("words in vocab", words);
+ 
   const showWords = () => {
     return words.map((word, index) => {
       return (
-        <View>
-          <Text>{word.word}{word.level}</Text>
+        <View key={index}>
+          {word.word && <Text>Word: {word.word}</Text>}
+          {word.definition && <Text>Definition: {word.definition}</Text>}
+          {word.hanja && <Text>Hanja: {word.hanja}</Text>}
+          {word.kor_level && <Text>Korean Level: {word.kor_level}</Text>}
         </View>
       )
     })

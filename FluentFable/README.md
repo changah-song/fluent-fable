@@ -1,5 +1,8 @@
 To-do..
 
+04/17/2024
+- set up database using expo sqlite and adding and viewing data entries
+
 04/07/2024
 - fixed blank space being highlighted at start
 - hid all API keys
@@ -15,12 +18,18 @@ To-do..
 - rudimentary translator API that is very slow
 
 todo:
+
+- save icon should be connected to every word
+- delete entries from database
+- no repeating words
+     - a smart app would recognize that certain words are the same (verb, noun, etc.)
+- remove korean particles from highlights (~하다, ~을/를, etc.)
+
 READING SCREEN
-- option to save word...
-- separate topsection from lightuptext, give it its own file and see if useEffect can work for the data
+- option to save word... ✅
+- separate topsection from lightuptext, give it its own file and see if useEffect can work for the data ✅
 - see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
 - loading indication when translating...
-- remove korean particles from highlights (~하다, ~을/를, etc.)
 - use better translator API ✅
     - find better alternative
 - web scraping and getting news
@@ -28,7 +37,8 @@ READING SCREEN
 - add toggle for naver dictionary and google translate ✅
 - make the dictionary top section more detailed
     - show origin and POS and don't show repeats..
-- touch onPress isn't as reactive as desired...
+- touch onPress isn't as reactive as desired... ✅
+    - maybe change it to a touchableopacity
 
 USER LOGIN
 - google account first
@@ -46,8 +56,8 @@ MVP
 - Flashcard (colorfy)
 
 Less Priority
-- Naver dictionary API
-- Language selection
+- Naver dictionary API ✅
+- Language selection 
 - Reload chatGPT prompt
 - Generating prompt based on skill-level (and topic?)
     - imagery & narration-style, news & news-style
@@ -55,7 +65,6 @@ Less Priority
     - cascading feel. once marked unsure, it pops up everyday for a week(?)
 
 categories: business entertainment health science sports technology
-API key for Korean news: 7f6c3d9ca2c54b09a98bc0e12661b644
 
 Less less Priority
 - Create prompts without words already known by user
