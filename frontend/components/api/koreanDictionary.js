@@ -33,6 +33,7 @@ const koreanDictionary = ( {query} ) => {
             if (!response.data) {
                 throw new Error("Empty response data");
             }
+            
             console.log(response.data)
             var XMLParser = require('react-xml-parser');
             var xml = new XMLParser().parseFromString(response.data);
@@ -51,6 +52,7 @@ const koreanDictionary = ( {query} ) => {
     useEffect(() => {
         fetchData();
     }, [query]);
+    
     return { dictionaryData };
 }
 

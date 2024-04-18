@@ -1,9 +1,11 @@
 To-do..
 
-04/17/2024
+Done
+- set up FastAPI but struggling to connect it with frontend...
+- figured out the KONLPY module and picked the best options
+
 - set up database using expo sqlite and adding and viewing data entries
 
-04/07/2024
 - fixed blank space being highlighted at start
 - hid all API keys
 - got the toggle between dictionary and translate running successfully
@@ -11,7 +13,6 @@ To-do..
 - implemented Korean Dictionary API (unlimited calls, pretty fast)
 - the top view now displays the dictionary look-up
 
-04/06/2024
 - created a better way to view and interact with text.
     - top section for translation
     - accurate highlighting for each word
@@ -19,11 +20,14 @@ To-do..
 
 todo:
 
+- KONLPY!! IMPLEMENT IT :)
+    - remove korean particles from highlights (~하다, ~을/를, etc.)
+    - ... if initial highlight isn't a word,, maybe reduce by one character repeatedly until a word is found... 🧨
 - save icon should be connected to every word
 - delete entries from database
 - no repeating words
      - a smart app would recognize that certain words are the same (verb, noun, etc.)
-- remove korean particles from highlights (~하다, ~을/를, etc.)
+
 
 READING SCREEN
 - option to save word... ✅

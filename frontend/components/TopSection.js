@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
-import googleTranslate from './lookup/googleTranslate';
-import koreanDictionary from './lookup/koreanDictionary';
+
+import googleTranslate from './api/googleTranslate';
+import koreanDictionary from './api/koreanDictionary';
+import stemWord from './api/stemWord';
+
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
@@ -11,7 +14,10 @@ import { insertData, viewData } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
     // const { translatedData } = googleTranslate({query: highlightedWord});
-    const { dictionaryData } = koreanDictionary({query: highlightedWord});
+    // const { dictionaryData } = koreanDictionary({query: stemWord(highlightedWord)});
+    const { stemWordResult } = stemWord({ query: highlightedWord });
+    const { dictionaryData } = koreanDictionary({ query: stemWordResult });
+
     const [isSaved, setIsSaved] = useState(true);
     const [isContent1Visible, setIsContent1Visible] = useState(true);
     const toggleContent = () => {
