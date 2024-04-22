@@ -1,12 +1,19 @@
 import * as SQLite from 'expo-sqlite';
 
-const db = SQLite.openDatabase('a.db');
+// need to change so that i don't have to change db everytime i change table layout...
+const db = SQLite.openDatabase('c.db');
 
 export const createTable = () => {
   return new Promise ((resolve, reject) => {
     db.transaction(tx => {
       tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS vocab (id INTEGER PRIMARY KEY AUTOINCREMENT, kor_word TEXT, kor_hanja TEXT, kor_def TEXT, kor_level TEXT)',
+        `CREATE TABLE 
+          IF NOT EXISTS vocab (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            word TEXT, 
+            hanja TEXT, 
+            def TEXT, 
+            level TEXT)`,
         [],
         () => {
           console.log("Table created successfully!");
@@ -25,7 +32,7 @@ export const insertData = (word, hanja, definition, level) => {
   return new Promise((resolve, reject) => {
     db.transaction(tx => {
       tx.executeSql(
-        'INSERT INTO vocab (word, hanja, definition, kor_level) VALUES (?, ?, ?, ?)',
+        'INSERT INTO vocab (word, hanja, def, level) VALUES (?, ?, ?, ?)',
         [word, hanja, definition, level],
         () => {
             console.log('Data inserted successfully!');
@@ -40,6 +47,44 @@ export const insertData = (word, hanja, definition, level) => {
   });
 };
 
+export const removeData = (word) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        'DELETE FROM vocab WHERE word = ?',
+        [word],
+        (_, result) => {
+          console.log(`'${word}' removed successfully.`);
+          resolve();
+        },
+        (_, error) => {
+          console.error(`Error removing word with word '${word}':`, error);
+          reject(error);
+        }
+      );
+    });
+  });
+};
+
+export const wordExists = (word) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        'SELECT COUNT(*) AS count FROM vocab WHERE word = ?',
+        [word],
+        (_, result) => {
+          const {count} = result.rows.item(0); // Extract count from result
+          console.log(count)
+          resolve(count > 0); // Resolve true if count > 0, false otherwise
+        },
+        (_, error) => {
+          console.error('Error checking if word exists:', error);
+          reject(error);
+        }
+      );
+    });
+  });
+};
 
 export const getTableSchema = () => {
   return new Promise((resolve, reject) => {

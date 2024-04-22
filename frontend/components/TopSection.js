@@ -10,24 +10,43 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { insertData, viewData } from './Database';
+import { insertData, removeData, wordExists } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
     // const { translatedData } = googleTranslate({query: highlightedWord});
     // const { dictionaryData } = koreanDictionary({query: stemWord(highlightedWord)});
-    const { stemWordResult } = stemWord({ query: highlightedWord });
-    const { dictionaryData } = koreanDictionary({ query: stemWordResult });
-
-    const [isSaved, setIsSaved] = useState(true);
+    // const { stemWordResult } = stemWord({ query: highlightedWord });
     const [isContent1Visible, setIsContent1Visible] = useState(true);
+    const [isSaved, setIsSaved] = useState(false);
+
+    const { dictionaryData } = koreanDictionary({ query: highlightedWord });
     const toggleContent = () => {
         setIsContent1Visible(!isContent1Visible);
     };
 
-    const toggleSave = () => {
-        insertData(highlightedWord,"umm",dictionaryData.join(", "),"unorganized");
-        setIsSaved(!isSaved);
+    // this use effect and promise chaining handles asynchronous nature of data operations
+    useEffect(() => {
+        wordExists(highlightedWord)
+            .then(exists => {
+                console.log(exists)
+                setIsSaved(exists);
+            })
+            .catch(error => {
+                console.error('Error checking if word exists:', error);
+            });
+    }, [highlightedWord]);
+
+    // add word to database and toggle save
+    const toggleSave = async () => {
+        await insertData(highlightedWord,"umm",dictionaryData.join(", "),"unorganized");
+        setIsSaved(true);
     };
+
+    // remove word from database and toggle unsave
+    const toggleUnSave = async () => {
+        await removeData(highlightedWord);
+        setIsSaved(false);
+    }
 
     return (
         <View style={styles.topSection}>
@@ -47,7 +66,7 @@ const TopSection = ({ highlightedWord }) => {
             )}
 
             {isSaved ? (
-                <TouchableOpacity onPress={toggleSave} style={styles.save}>
+                <TouchableOpacity onPress={toggleUnSave} style={styles.save}>
                     <MaterialCommunityIcons name="content-save-check" size={28} color="black" />
                 </TouchableOpacity>
             ) : (

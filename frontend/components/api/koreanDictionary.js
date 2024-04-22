@@ -34,7 +34,7 @@ const koreanDictionary = ( {query} ) => {
                 throw new Error("Empty response data");
             }
             
-            console.log(response.data)
+            // console.log(response.data)  <-- more info about response
             var XMLParser = require('react-xml-parser');
             var xml = new XMLParser().parseFromString(response.data);
             const translations = xml.getElementsByTagName('trans_word').slice(0,3).map(dict => dict.value.slice(0,-2));
