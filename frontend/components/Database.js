@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 
 // need to change so that i don't have to change db everytime i change table layout...
-const db = SQLite.openDatabase('c.db');
+const db = SQLite.openDatabase('temp.db');
 
 export const createTable = () => {
   return new Promise ((resolve, reject) => {
@@ -74,7 +74,6 @@ export const wordExists = (word) => {
         [word],
         (_, result) => {
           const {count} = result.rows.item(0); // Extract count from result
-          console.log(count)
           resolve(count > 0); // Resolve true if count > 0, false otherwise
         },
         (_, error) => {

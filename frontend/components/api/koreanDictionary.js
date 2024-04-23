@@ -38,7 +38,7 @@ const koreanDictionary = ( {query} ) => {
             var XMLParser = require('react-xml-parser');
             var xml = new XMLParser().parseFromString(response.data);
             const translations = xml.getElementsByTagName('trans_word').slice(0,3).map(dict => dict.value.slice(0,-2));
-            console.log(translations)
+            console.log('translations..', translations);
 
             setData(translations);
         } catch(error) {
