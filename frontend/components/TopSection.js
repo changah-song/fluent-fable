@@ -13,13 +13,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { insertData, removeData, wordExists } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
-    // const { translatedData } = googleTranslate({query: highlightedWord});
-    // const { dictionaryData } = koreanDictionary({query: stemWord(highlightedWord)});
-    // const { stemWordResult } = stemWord({ query: highlightedWord });
     const [isContent1Visible, setIsContent1Visible] = useState(true);
-    const [isSaved, setIsSaved] = useState(false);
-
+    const [isSaved, setIsSaved] = useState(false);    
+    // const { translatedData } = googleTranslate({query: highlightedWord});
+    const stemWordList  = stemWord({ query: highlightedWord });
+    console.log('hehe', stemWordList);
     const { dictionaryData } = koreanDictionary({ query: highlightedWord });
+    
     const toggleContent = () => {
         setIsContent1Visible(!isContent1Visible);
     };
