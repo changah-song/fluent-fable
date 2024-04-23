@@ -1,16 +1,20 @@
 To-do..
 
 Done
+- connected local fastapi server to frontend localhost (10.2.2.1 for android emulator)
+    - learned about connecting server and emulator/local machine (e.g. CORS)
+
 - save icon should be connected to every word
+    - learned about importance of asynchrony in database operations (async/await/promise)  
 - delete entries from database
 
 - set up FastAPI but struggling to connect it with frontend...
-- figured out the KONLPY module and picked the best options
+- figured out the KONLPY module and picked the best options (okt > kkma > ...)
 
 - set up database using expo sqlite and adding and viewing data entries
 
 - fixed blank space being highlighted at start
-- hid all API keys
+- hid all API keys (env)
 - got the toggle between dictionary and translate running successfully
 - looked into alternatives for google translate API (with limited calls)
 - implemented Korean Dictionary API (unlimited calls, pretty fast)
@@ -23,9 +27,13 @@ Done
 
 todo:
 
-- KONLPY!! IMPLEMENT IT :)
-    - remove korean particles from highlights (~하다, ~을/를, etc.)
-    - ... if initial highlight isn't a word,, maybe reduce by one character repeatedly until a word is found... 🧨
+- currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다 :(
+    - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
+    - I'm assuming that KKMA library can handle this better,, not high priority 🧨
+- KONLPY!! IMPLEMENT IT :) ✅
+    - remove korean particles from highlights (~하다, ~을/를, etc.) 
+    - ... if initial highlight isn't a word,, maybe reduce by one character repeatedly until a word is found... 
+        - no need? if i just dispaly all words
 - no repeating words
      - a smart app would recognize that certain words are the same (verb, noun, etc.)
 - save icon should be connected to every word ✅
