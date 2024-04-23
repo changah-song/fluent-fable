@@ -17,7 +17,7 @@ app.add_middleware(
 
 @app.get("/okt_morphs/")
 async def get_okt_morphs(text: str):
-    morphs = okt.morphs(text, stem=True)
+    morphs = okt.pos(text, stem=True)
     return {"result": morphs}
 
 @app.get("/kkma_morphs/")
