@@ -6,14 +6,16 @@
     - easiest is to save the list of definitions
 - HANJA CONNECTION !! make the dictionary top section more detailed 
     - show origin and POS and don't show repeats..
-- see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
-- loading indication when translating...
+- loading indication when translating and dictionary...
     - when a word is clicked, immeidately show loading (with gif?)
     - cache stuff for less api calls and smoother feel
 - user login
 - flashcard section ...
 
 ## Done
+- see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
+    - it's alright ✅ 
+
 - list all definitions from a list of words in dictionary section ✅
 
 - connected local fastapi server to frontend localhost (10.2.2.1 for android emulator) ✅
