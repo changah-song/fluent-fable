@@ -16,7 +16,7 @@ const LightUpText = () => {
     <View style={styles.container}>
 
       <TopSection style={styles.topSection} highlightedWord={highlightedWord} />
-      
+
       <View style={styles.bottomSection}>
         <Text style={styles.text}>
           {words.map((word, index) => {
@@ -50,7 +50,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingTop: '10%',  // leave space for the top section
   },
   text: {

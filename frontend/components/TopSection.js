@@ -53,7 +53,7 @@ const TopSection = ({ highlightedWord }) => {
     return (
         <View style={styles.topSection}>
 
-            <Text style={{ fontSize: 18, position: 'absolute', top:11, left:15 }}> 
+            <Text style={{ fontSize: 18, position: 'absolute', top:8, left:13 }}> 
                 {highlightedWord}
             </Text>
             
@@ -115,14 +115,14 @@ const styles = StyleSheet.create({
         alignItems: 'left',
         padding: '3%',
         backgroundColor: '#e0e0e0',
-        width: '120%',
+        width: '100%',
     },
     save: {
         width: 30, // Set width to make it square
         height: 30, // Set height to make it square
         position: 'absolute', // Set position to absolute
-        top: 15, // Adjust top position as needed
-        right: 53, // Adjust right position as needed
+        top: 5, // Adjust top position as needed
+        right: 5, // Adjust right position as needed
         borderRadius: 5, // Example border radius
         justifyContent: 'center', // Center content vertically
         alignItems: 'center', // Center content horizontally
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
         width: 30, // Set width to make it square
         height: 30, // Set height to make it square
         position: 'absolute', // Set position to absolute
-        top: 15, // Adjust top position as needed
-        right: 95, // Adjust right position as needed
+        top: 5, // Adjust top position as needed
+        right: 45, // Adjust right position as needed
         borderRadius: 5, // Example border radius
         justifyContent: 'center', // Center content vertically
         alignItems: 'center', // Center content horizontally
