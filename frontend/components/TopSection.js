@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
 import googleTranslate from './api/googleTranslate';
 import koreanDictionary from './api/koreanDictionary';
@@ -16,9 +16,11 @@ const TopSection = ({ highlightedWord }) => {
     const [isContent1Visible, setIsContent1Visible] = useState(true);
     const [isSaved, setIsSaved] = useState(false);    
     // const { translatedData } = googleTranslate({query: highlightedWord});
+    // const { dictionaryData } = koreanDictionary({query: stemWord(highlightedWord)});
     const stemWordList  = stemWord({ query: highlightedWord });
-    console.log('hehe', stemWordList);
-    const { dictionaryData } = koreanDictionary({ query: highlightedWord });
+    console.log('stemword list', stemWordList);
+    const { dictionaryData } = koreanDictionary({ query: stemWordList });
+    console.log('dictionary data', dictionaryData);
     
     const toggleContent = () => {
         setIsContent1Visible(!isContent1Visible);
@@ -76,11 +78,18 @@ const TopSection = ({ highlightedWord }) => {
             )}
     
             {isContent1Visible ? (
-            <Text style={{position: 'absolute', top: 40, left: 15}}>
-                {dictionaryData && dictionaryData.length > 0 && (
-                <Text>{ dictionaryData.join("\n") }</Text>
-                )}
-            </Text>
+            <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
+                {stemWordList.map((word, index) => (
+                    <View key={index}>
+                        <Text style={{ fontWeight: 'bold' }}>{word}: </Text>
+                        <Text style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                            {dictionaryData[index] && dictionaryData[index].length > 0
+                                ? dictionaryData[index].join(", ")
+                                : "Loading..."}
+                        </Text>
+                    </View>
+                ))}
+            </ScrollView>
             ) : (
             /*<Text style={{position: 'absolute', top: 40, left: 15}}>
                 {translatedData && translatedData.length > 0 && (
@@ -101,7 +110,7 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: '15%',
+        height: '20%',
         justifyContent: 'center',
         alignItems: 'left',
         padding: '3%',
