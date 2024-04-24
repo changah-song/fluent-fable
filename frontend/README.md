@@ -2,17 +2,20 @@
 
 ## Todo:
 
-- list all definitions from a list of words in dictionary section
 - how will saving and definition work?
     - easiest is to save the list of definitions
 - HANJA CONNECTION !! make the dictionary top section more detailed 
     - show origin and POS and don't show repeats..
 - see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
 - loading indication when translating...
+    - when a word is clicked, immeidately show loading (with gif?)
+    - cache stuff for less api calls and smoother feel
 - user login
 - flashcard section ...
 
 ## Done
+- list all definitions from a list of words in dictionary section ✅
+
 - connected local fastapi server to frontend localhost (10.2.2.1 for android emulator) ✅
     - learned about connecting server and emulator/local machine (e.g. CORS)
 
@@ -56,11 +59,12 @@
 
 ## Non-MVP Topics
 
-- web scraping and getting news ❓
-- home page with list of categories for readings that the user can choose ❓
-- currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다 :( ❓
+- currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
     - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
     - I'm assuming that KKMA library can handle this better,, not high priority 🧨
+- web scraping and getting news ❓
+- home page with list of categories for readings that the user can choose ❓
+
 
 --------
 
