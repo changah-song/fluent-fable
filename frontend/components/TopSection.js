@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
-import googleTranslate from './api/googleTranslate';
 import Translator from 'react-native-translator';
 import koreanDictionary from './api/koreanDictionary';
 import stemWord from './api/stemWord';
@@ -14,15 +13,16 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { insertData, removeData, wordExists } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
-    const [translated, setTranslated] = useState('');    
-
+    const [translated, setTranslated] = useState(''); 
+       
     const [isContent1Visible, setIsContent1Visible] = useState(true);
-    const [isSaved, setIsSaved] = useState(false);    
-    // const { translatedData } = googleTranslate({query: highlightedWord});
-    // const { dictionaryData } = koreanDictionary({query: stemWord(highlightedWord)});
+    const [isSaved, setIsSaved] = useState(false); 
+
     const stemWordList  = stemWord({ query: highlightedWord });
     const { dictionaryData } = koreanDictionary({ query: stemWordList });
     
+    console.log(dictionaryData, "hi");
+
     const toggleContent = () => {
         setIsContent1Visible(!isContent1Visible);
     };
@@ -102,6 +102,7 @@ const TopSection = ({ highlightedWord }) => {
                 from="ko"
                 to="en"
                 value={highlightedWord}
+                type='papago'
                 onTranslated={(t) => setTranslated(t)}
                 />
                 <Text>
