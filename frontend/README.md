@@ -1,16 +1,33 @@
 #### To-do..
-
+ 
 ## Todo:
-
-- how will saving and definition work?
-    - easiest is to save the list of definitions
-- HANJA CONNECTION !! make the dictionary top section more detailed 
+- HANJA CONNECTION !! make the dictionary top section more detailed 🟥
+    - locate hanja if existing
+    // can be multiple hanjas
+    // show only most common
+    // ... hanja definition API?? 
     - show origin and POS and don't show repeats..
-- loading indication when translating and dictionary...
+    - visualization would be fun: google: 'matplotlib data network graph'
+
+- some korean words don't have an english translation in dictionary 🟥
+    - in that case, use translator... hmm  
+
+- add option between google and papago translate :) 🟩
+- can only save words when in dictionary mode 🟩
+    - save icon next to words from dictionary
+- can highlight many words at a time... 🟨
+    - separate from touchopacity thing... or automatically translate entire sentence
+    - click again to highlight long sentence
+- how will saving and definition work? 🟨
+    - easiest is to save the list of definitions
+
+- loading indication when translating and dictionary... 🟨
     - when a word is clicked, immeidately show loading (with gif?)
     - cache stuff for less api calls and smoother feel
-- user login
-- flashcard section ...
+- user login 🟥
+- flashcard section ... 🟥
+- expand top section? when viewing connections, extensive def... 🟥
+    - should show other defs from the korean dictionary api if there is more space?
 
 ## Done
 - see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
@@ -63,6 +80,7 @@
 
 - currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
     - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
+    - 올라오다 doesn't translate because it doesn't have an english equivalent in dict...
     - I'm assuming that KKMA library can handle this better,, not high priority 🧨
 - web scraping and getting news ❓
 - home page with list of categories for readings that the user can choose ❓
