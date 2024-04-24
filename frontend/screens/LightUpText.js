@@ -15,25 +15,37 @@ const LightUpText = () => {
   return (
     <View style={styles.container}>
 
-      <TopSection highlightedWord={highlightedWord} />
+      <TopSection style={styles.topSection} highlightedWord={highlightedWord} />
+      
+      <View style={styles.bottomSection}>
+        <Text style={styles.text}>
+          {words.map((word, index) => {
+            // Only consider alphanumeric characters for highlighting
+            const strippedWord = word.match(/[\p{L}\p{N}]+/gu) ? word : null;
+            // need to further strip the non-null words and set markers/particles/etc. to null or replace it with ~marker
+            return (
+              <TouchableOpacity key={index} onPress={() => strippedWord && handleWordPress(strippedWord)} style={highlightedWord === strippedWord ? styles.highlighted : null}>
+                <Text style={styles.text}>{word}{''}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </Text>
+      </View>
 
-      <Text style={styles.text}>
-        {words.map((word, index) => {
-          // Only consider alphanumeric characters for highlighting
-          const strippedWord = word.match(/[\p{L}\p{N}]+/gu) ? word : null;
-          // need to further strip the non-null words and set markers/particles/etc. to null or replace it with ~marker
-          return (
-            <TouchableOpacity key={index} onPress={() => strippedWord && handleWordPress(strippedWord)} style={highlightedWord === strippedWord ? styles.highlighted : null}>
-              <Text style={styles.text}>{word}{''}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  bottomSection: {
+    position: 'absolute',
+    bottom: 0,
+    height: '90%',
+    justifyContent: 'center',
+    alignItems: 'left',
+    padding: '10%',
+    width: '120%',
+},
   container: {
     flex: 1,
     justifyContent: 'center',
