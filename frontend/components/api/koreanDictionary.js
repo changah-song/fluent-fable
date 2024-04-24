@@ -17,10 +17,8 @@ const koreanDictionary = ( {query} ) => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            console.log('attempting..');
             const results = await Promise.all(
                 query.map(async (q) => {
-                    console.log('q', q);
                     const options = {
                         method: 'GET',
                         url: api_url,
@@ -39,7 +37,6 @@ const koreanDictionary = ( {query} ) => {
                     var XMLParser = require('react-xml-parser');
                     var xml = new XMLParser().parseFromString(response.data);
                     const translations = xml.getElementsByTagName('trans_word').slice(0, 3).map(dict => dict.value.slice(0, -2));
-                    console.log('translations', translations);
                     return translations;
                 })
             );

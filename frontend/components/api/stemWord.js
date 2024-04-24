@@ -31,8 +31,8 @@ const stemWord = ( {query} ) => {
         return ['Noun', 'Verb', 'Adverb', 'Adjective', 'Modifier'].includes(pos);
       });
       const filteredWordList = filteredWords.map(([word, _]) => word);
-      console.log('full response', response.data.result)
-      console.log('filtered response', filteredWordList)
+      //console.log('full response', response.data.result)
+      //console.log('filtered response', filteredWordList)
 
       setStemWord(filteredWordList);
       setIsLoading(false);
