@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
 import googleTranslate from './api/googleTranslate';
+import Translator from 'react-native-translator';
 import koreanDictionary from './api/koreanDictionary';
 import stemWord from './api/stemWord';
 
@@ -13,14 +14,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { insertData, removeData, wordExists } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
+    const [translated, setTranslated] = useState('');    
+
     const [isContent1Visible, setIsContent1Visible] = useState(true);
     const [isSaved, setIsSaved] = useState(false);    
     // const { translatedData } = googleTranslate({query: highlightedWord});
     // const { dictionaryData } = koreanDictionary({query: stemWord(highlightedWord)});
     const stemWordList  = stemWord({ query: highlightedWord });
-    console.log('stemword list', stemWordList);
     const { dictionaryData } = koreanDictionary({ query: stemWordList });
-    console.log('dictionary data', dictionaryData);
     
     const toggleContent = () => {
         setIsContent1Visible(!isContent1Visible);
@@ -96,7 +97,17 @@ const TopSection = ({ highlightedWord }) => {
                 <Text> { translatedData } </Text>
                 )}
             </Text>*/
-            <Text>Placeholder</Text>
+            <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
+                <Translator
+                from="ko"
+                to="en"
+                value={highlightedWord}
+                onTranslated={(t) => setTranslated(t)}
+                />
+                <Text>
+                    {translated}
+                </Text>
+            </ScrollView>
             )}
             
         </View>
