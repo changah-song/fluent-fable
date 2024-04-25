@@ -86,11 +86,21 @@ const TopSection = ({ highlightedWord }) => {
                 {stemWordList.map((word, index) => (
                     <View key={index}>
                         <Text style={{ fontWeight: 'bold' }}>{word}: </Text>
-                        <Text style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                            {dictionaryData[index] && dictionaryData[index].length > 0
-                                ? dictionaryData[index].join(", ")
-                                : "Loading..."}
-                        </Text>
+
+                        {dictionaryData[index] && dictionaryData[index].length > 0 ? (
+                            dictionaryData[index].map((entry, i) => (
+                                <View key={i} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <Text>{entry.word}</Text>
+                                    <Text style={{ marginHorizontal: 5 }}>|</Text>
+                                    
+                                    <TouchableOpacity><Text>{entry.origin}</Text></TouchableOpacity>
+                                    <Text style={{ marginHorizontal: 5 }}>|</Text>
+                                    <Text>{entry.transWord}</Text>
+                                </View>
+                            ))
+                        ) : (
+                            <Text> "Loading..." </Text>
+                        )}
                     </View>
                 ))}
             </ScrollView>
@@ -108,7 +118,7 @@ const TopSection = ({ highlightedWord }) => {
                 onTranslated={(t) => setTranslated(t)}
                 />
                 <Text style={{ position: 'absolute', top: 0}}>
-                    {translated}
+                    {type}: {translated}
                 </Text>
             </ScrollView>
             )}
