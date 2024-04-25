@@ -36,6 +36,8 @@ const koreanDictionary = ( {query} ) => {
                     }
                     var XMLParser = require('react-xml-parser');
                     var xml = new XMLParser().parseFromString(response.data);
+                    // maybe i can use the raw xml data to get both hanja and def...
+                    console.log(response.data);
                     const translations = xml.getElementsByTagName('trans_word').slice(0, 3).map(dict => dict.value.slice(0, -2));
                     return translations;
                 })
