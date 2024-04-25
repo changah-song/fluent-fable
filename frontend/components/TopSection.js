@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 
 import Translator from 'react-native-translator';
 import koreanDictionary from './api/koreanDictionary';
@@ -14,6 +14,7 @@ import { insertData, removeData, wordExists } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
     const [translated, setTranslated] = useState(''); 
+    const [type, setType] = useState('papago');
        
     const [isContent1Visible, setIsContent1Visible] = useState(true);
     const [isSaved, setIsSaved] = useState(false); 
@@ -21,8 +22,6 @@ const TopSection = ({ highlightedWord }) => {
     const stemWordList  = stemWord({ query: highlightedWord });
     const { dictionaryData } = koreanDictionary({ query: stemWordList });
     
-    console.log(dictionaryData, "hi");
-
     const toggleContent = () => {
         setIsContent1Visible(!isContent1Visible);
     };
@@ -38,6 +37,10 @@ const TopSection = ({ highlightedWord }) => {
                 console.error('Error checking if word exists:', error);
             });
     }, [highlightedWord]);
+
+    const handleTypeChange = () => {
+        setType(type === 'papago' ? 'google' : 'papago');
+    };
 
     // add word to database and toggle save
     const toggleSave = async () => {
@@ -92,20 +95,19 @@ const TopSection = ({ highlightedWord }) => {
                 ))}
             </ScrollView>
             ) : (
-            /*<Text style={{position: 'absolute', top: 40, left: 15}}>
-                {translatedData && translatedData.length > 0 && (
-                <Text> { translatedData } </Text>
-                )}
-            </Text>*/
             <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
+                <Switch
+                value={type === 'google'}
+                onValueChange={handleTypeChange}
+                />
                 <Translator
                 from="ko"
                 to="en"
                 value={highlightedWord}
-                type='papago'
+                type={type}
                 onTranslated={(t) => setTranslated(t)}
                 />
-                <Text>
+                <Text style={{ position: 'absolute', top: 0}}>
                     {translated}
                 </Text>
             </ScrollView>
