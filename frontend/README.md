@@ -1,6 +1,11 @@
 #### To-do..
  
 ## Todo:
+- add 'more' that expands and only show the first result initially
+    - expand topsection..
+- check for hanja in origin (it can be english) and make each character clickable 🟨 
+- modal popup when hanja is pressed
+
 - HANJA CONNECTION !! make the dictionary top section more detailed 🟥
     - locate hanja if existing
     // can be multiple hanjas
@@ -12,7 +17,6 @@
 - some korean words don't have an english translation in dictionary 🟥
     - in that case, use translator... hmm  
 
-- add option between google and papago translate :) 🟩
 - can only save words when in dictionary mode 🟩
     - save icon next to words from dictionary
 - can highlight many words at a time... 🟨
@@ -30,6 +34,9 @@
     - should show other defs from the korean dictionary api if there is more space?
 
 ## Done
+- display word, origin, and definition ✅ 
+- add option between google and papago translate :) ✅ 
+
 - see if https://github.com/KoreanThinker/react-native-translator actually was a fast translator...
     - it's alright ✅ 
 
