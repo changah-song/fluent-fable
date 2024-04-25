@@ -36,10 +36,23 @@ const koreanDictionary = ( {query} ) => {
                     }
                     var XMLParser = require('react-xml-parser');
                     var xml = new XMLParser().parseFromString(response.data);
+                    
+                    const items = xml.getElementsByTagName('item');
+                    const extractedData = items.map(item => {
+                        const word = item.getElementsByTagName('word')[0].value;
+                        const origin = item.getElementsByTagName('origin')[0]?.value || 'N/A'; // Use 'N/A' if origin is not available
+                        const transWord = item.getElementsByTagName('trans_word')[0]?.value.slice(0, -2) || 'N/A'; // Use 'N/A' if translation word is not available
+                        
+                        return { word, origin, transWord };
+                    });
+
+                    console.log("EXTRACT-=------!!", extractedData);
                     // maybe i can use the raw xml data to get both hanja and def...
-                    console.log(response.data);
+                    // console.log('ORIGIN:', xml.getElementsByTagName('origin'));
+                    // console.log('DEFF: ', xml.getElementsByTagName('trans_word'));
                     const translations = xml.getElementsByTagName('trans_word').slice(0, 3).map(dict => dict.value.slice(0, -2));
-                    return translations;
+                    // console.log("result", translations)
+                    return extractedData;
                 })
             );
             setDictionaryData(results);
@@ -55,6 +68,7 @@ const koreanDictionary = ( {query} ) => {
         fetchData();
     }, [query]);
     
+    console.log(dictionaryData)
     return { dictionaryData };
 }
 
