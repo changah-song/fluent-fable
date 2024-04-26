@@ -33,9 +33,10 @@ const Flashcard = () => {
       return (
         <View key={index}>
           {word.word && <Text>Word: {word.word}</Text>}
-          {word.definition && <Text>Definition: {word.definition}</Text>}
+          {word.def && <Text>Definition: {word.def}</Text>}
           {word.hanja && <Text>Hanja: {word.hanja}</Text>}
-          {word.kor_level && <Text>Korean Level: {word.kor_level}</Text>}
+          {word.level && <Text>Korean Level: {word.level}</Text>}
+          <Text>-------------</Text>
         </View>
       )
     })
