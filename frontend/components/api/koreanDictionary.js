@@ -46,7 +46,6 @@ const koreanDictionary = ( {query} ) => {
                         return { word, origin, transWord };
                     });
 
-                    console.log("EXTRACT-=------!!", extractedData);
                     // maybe i can use the raw xml data to get both hanja and def...
                     // console.log('ORIGIN:', xml.getElementsByTagName('origin'));
                     // console.log('DEFF: ', xml.getElementsByTagName('trans_word'));
@@ -68,7 +67,6 @@ const koreanDictionary = ( {query} ) => {
         fetchData();
     }, [query]);
     
-    console.log(dictionaryData)
     return { dictionaryData };
 }
 
