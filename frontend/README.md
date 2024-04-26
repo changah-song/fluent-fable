@@ -36,6 +36,8 @@
 
 ## Done
 
+- created separate file for the bottom section of 'read' page
+
 - add 'more' that expands and only show the first result initially ✅ 
     - implemented a way to expand and compress definition, only show the first definition (naive approach)
 

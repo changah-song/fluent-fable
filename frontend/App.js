@@ -1,6 +1,6 @@
 import Homescreen from './screens/Homescreen';
 import Flashcard from './screens/Flashcard';
-import LightUpText from './screens/LightUpText';
+import ReadText from './screens/ReadText';
 import { createTable, deleteAllDataFromTable, getTableSchema, insertData, viewData } from './components/Database';
 
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -43,7 +43,7 @@ export default function App() {
               return <FontAwesome5 name={iconName} size={size} color={color} />;
             },
           })}>
-          <Tab.Screen name="Read" component={LightUpText} />
+          <Tab.Screen name="Read" component={ReadText} />
           <Tab.Screen name="Learn" component={Flashcard} />
         </Tab.Navigator>
       </NavigationContainer>
