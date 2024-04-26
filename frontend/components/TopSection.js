@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     },
     save: {
         position: 'absolute', // Set position to absolute
-        top: 5, // Adjust top position as needed
+        top: 3, // Adjust top position as needed
         left: 5, // Adjust right position as needed
         borderRadius: 5, // Example border radius
         justifyContent: 'center', // Center content vertically
