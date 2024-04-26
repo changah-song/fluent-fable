@@ -1,8 +1,7 @@
 #### To-do..
  
 ## Todo:
-- add 'more' that expands and only show the first result initially
-    - expand topsection..
+
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
 
@@ -36,7 +35,9 @@
     - should show other defs from the korean dictionary api if there is more space?
 
 ## Done
-- implemented a way to expand and compress definition, only show the first definition (naive approach)
+
+- add 'more' that expands and only show the first result initially ✅ 
+    - implemented a way to expand and compress definition, only show the first definition (naive approach)
 
 - display word, origin, and definition ✅ 
 - add option between google and papago translate :) ✅ 
