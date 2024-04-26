@@ -13,6 +13,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { insertData, removeData, wordExists } from './Database';
 
 const TopSection = ({ highlightedWord }) => {
+    const [expandedWords, setExpandedWords] = useState([]);
+    const toggleExpanded = (word) => {
+        setExpandedWords((prevExpandedWords) =>
+            prevExpandedWords.includes(word) ? prevExpandedWords.filter((w) => w !== word) : [...prevExpandedWords, word]
+        );
+    };
+
     const [translated, setTranslated] = useState(''); 
     const [type, setType] = useState('papago');
        
@@ -85,19 +92,39 @@ const TopSection = ({ highlightedWord }) => {
             <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
                 {stemWordList.map((word, index) => (
                     <View key={index}>
-                        <Text style={{ fontWeight: 'bold' }}>{word}: </Text>
-
                         {dictionaryData[index] && dictionaryData[index].length > 0 ? (
-                            dictionaryData[index].map((entry, i) => (
-                                <View key={i} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-                                    <Text>{entry.word}</Text>
-                                    <Text style={{ marginHorizontal: 5 }}>|</Text>
-                                    
-                                    <TouchableOpacity><Text>{entry.origin}</Text></TouchableOpacity>
-                                    <Text style={{ marginHorizontal: 5 }}>|</Text>
-                                    <Text>{entry.transWord}</Text>
+                            <>
+                            <View style={{flexDirection: 'row'}}>
+                                <Text style={{ fontWeight: 'bold' }}>{word}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={{ marginHorizontal: 5 }}>(</Text>
+                                    <TouchableOpacity>
+                                        <Text>{dictionaryData[index][0].origin}</Text>
+                                    </TouchableOpacity>
+                                    <Text style={{ marginHorizontal: 5 }}>)</Text>
+                                    <Text>{dictionaryData[index][0].transWord}</Text>
                                 </View>
-                            ))
+                                {dictionaryData[index].length > 1 ? (
+                                    <TouchableOpacity onPress={() => toggleExpanded(word)}>
+                                        <Text style={{ color: 'blue', textDecorationLine: 'underline', marginLeft: 5}}>
+                                            {expandedWords.includes(word) ? 'less' : 'more'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </View>
+                            {expandedWords.includes(word) &&
+                                dictionaryData[index].slice(1).map((entry, i) => (
+                                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text>{entry.word}</Text>
+                                        <Text style={{ marginHorizontal: 5 }}>(</Text>
+                                        <TouchableOpacity>
+                                            <Text>{entry.origin}</Text>
+                                        </TouchableOpacity>
+                                        <Text style={{ marginHorizontal: 5 }}>)</Text>
+                                        <Text>{entry.transWord}</Text>
+                                    </View>
+                                ))}
+                            </>
                         ) : (
                             <Text> "Loading..." </Text>
                         )}
