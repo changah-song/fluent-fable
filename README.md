@@ -9,7 +9,8 @@ Preview of current state:
 
 
 
-https://github.com/paul-song-minerva/fluent-fable/assets/97287057/9aca2b13-97e3-491b-9fd2-9dc01da65386
+https://github.com/paul-song-minerva/fluent-fable/assets/97287057/fc9650b7-02ab-4a48-b7c0-6f346360b28f
+
 
 KoNLPy: very helpful for Korean stemming :))
 Eunjeong L. Park, Sungzoon Cho. “KoNLPy: Korean natural language processing in Python”, Proceedings of the 26th Annual Conference on Human & Cognitive Language Technology, Chuncheon, Korea, Oct 2014.
