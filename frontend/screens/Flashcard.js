@@ -25,9 +25,7 @@ const Flashcard = () => {
       fetchWords(); // Fetch data whenever screen is focused
     }, [])
   );
-  
-  console.log("words in vocab", words);
- 
+   
   const showWords = () => {
     return words.map((word, index) => {
       return (
