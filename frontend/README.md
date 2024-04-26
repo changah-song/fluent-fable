@@ -20,23 +20,21 @@
 - some korean words don't have an english translation in dictionary 🟥
     - in that case, use translator... hmm  
 
-- can only save words when in dictionary mode 🟩
-    - save icon next to words from dictionary
-
-- how will saving and definition work? 🟨
-    - easiest is to save the list of definitions
-
 - loading indication when translating and dictionary... 🟨
     - when a word is clicked, immeidately show loading (with gif?)
     - cache stuff for less api calls and smoother feel
 - user login 🟥
 - flashcard section ... 🟥
-- expand top section? when viewing connections, extensive def... 🟥
-    - should show other defs from the korean dictionary api if there is more space?
 
 ## Done
 
-- created separate file for the bottom section of 'read' page
+- expand top section? when viewing connections, extensive def... ✅
+    - should show other defs from the korean dictionary api if there is more space?
+- can only save words when in dictionary mode ✅
+    - save icon next to words from dictionary
+    - how will saving and definition work? save each word's def and origin :)
+
+- created separate file for the bottom section of 'read' page ✅ 
 
 - add 'more' that expands and only show the first result initially ✅ 
     - implemented a way to expand and compress definition, only show the first definition (naive approach)
