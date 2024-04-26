@@ -47,18 +47,18 @@ export const insertData = (word, hanja, definition, level) => {
   });
 };
 
-export const removeData = (word) => {
+export const removeData = (word, hanja, definition) => {
   return new Promise((resolve, reject) => {
     db.transaction(tx => {
       tx.executeSql(
-        'DELETE FROM vocab WHERE word = ?',
-        [word],
+        'DELETE FROM vocab WHERE word = ? AND hanja = ? AND def = ?',
+        [word, hanja, definition],
         (_, result) => {
-          console.log(`'${word}' removed successfully.`);
-          resolve();
+          console.log(`'${word}' with hanja '${hanja}' and definition '${definition}' removed successfully.`);
+          resolve(result);
         },
         (_, error) => {
-          console.error(`Error removing word with word '${word}':`, error);
+          console.error(`Error removing word '${word}' with hanja '${hanja}' and definition '${definition}':`, error);
           reject(error);
         }
       );

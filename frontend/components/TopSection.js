@@ -49,7 +49,7 @@ const TopSection = ({ highlightedWord }) => {
         const updatedSavedWords = { ...savedWords };
         delete updatedSavedWords[(word, origin, definition)];
         setSavedWords(updatedSavedWords);
-        removeData(word);
+        removeData(word, origin, definition);
     }
 
     const isWordSaved = (word, origin, definition) => savedWords[(word, origin, definition)] === true;
