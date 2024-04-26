@@ -2,13 +2,12 @@
  
 ## Todo:
 
-- check for hanja in origin (it can be english) and make each character clickable 🟨 
-- modal popup when hanja is pressed
-
 - can highlight many words at a time... 🟨
     - separate from touchopacity thing... or automatically translate entire sentence
     - click again to highlight long sentence
 
+- check for hanja in origin (it can be english) and make each character clickable 🟨 
+- modal popup when hanja is pressed
 - HANJA CONNECTION !! make the dictionary top section more detailed 🟥
     - locate hanja if existing
     // can be multiple hanjas
@@ -17,13 +16,12 @@
     - show origin and POS and don't show repeats..
     - visualization would be fun: google: 'matplotlib data network graph'
 
-- some korean words don't have an english translation in dictionary 🟥
-    - in that case, use translator... hmm  
-
 - loading indication when translating and dictionary... 🟨
     - when a word is clicked, immeidately show loading (with gif?)
     - cache stuff for less api calls and smoother feel
+
 - user login 🟥
+
 - flashcard section ... 🟥
 
 ## Done
