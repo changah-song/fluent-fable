@@ -6,6 +6,10 @@
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
 
+- can highlight many words at a time... 🟨
+    - separate from touchopacity thing... or automatically translate entire sentence
+    - click again to highlight long sentence
+
 - HANJA CONNECTION !! make the dictionary top section more detailed 🟥
     - locate hanja if existing
     // can be multiple hanjas
@@ -19,9 +23,7 @@
 
 - can only save words when in dictionary mode 🟩
     - save icon next to words from dictionary
-- can highlight many words at a time... 🟨
-    - separate from touchopacity thing... or automatically translate entire sentence
-    - click again to highlight long sentence
+
 - how will saving and definition work? 🟨
     - easiest is to save the list of definitions
 
@@ -34,6 +36,8 @@
     - should show other defs from the korean dictionary api if there is more space?
 
 ## Done
+- implemented a way to expand and compress definition, only show the first definition (naive approach)
+
 - display word, origin, and definition ✅ 
 - add option between google and papago translate :) ✅ 
 
@@ -85,6 +89,7 @@
 
 ## Non-MVP Topics
 
+- make the definition where the word is equal to the highlightedword to show in topsection before 'more' is pressed.
 - currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
     - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
     - 올라오다 doesn't translate because it doesn't have an english equivalent in dict...
