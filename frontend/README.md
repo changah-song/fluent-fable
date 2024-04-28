@@ -26,6 +26,9 @@
 
 ## Done
 
+- made the transNotDict useState hook more global by using Contexts. set up the context and used it according ✅
+    - learned how to access a single useState variable globally by using Context, Provider, and UseContext :)
+
 - expand top section? when viewing connections, extensive def... ✅
     - should show other defs from the korean dictionary api if there is more space?
 - can only save words when in dictionary mode ✅
