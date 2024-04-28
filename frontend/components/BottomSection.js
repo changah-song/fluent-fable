@@ -13,6 +13,10 @@ const BottomSection = ({ text, setHighlightedWord }) => {
       setHighlightedWord(word);
       setPressedWord(word);
     };
+
+    useEffect(() => {
+        setHighlightedWord("");
+    }, [transNotDict]);
   
     const words = text.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
     const sentences = text.match(/[^.!?]+[.!?]/g);
