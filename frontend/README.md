@@ -37,7 +37,7 @@
     - and translated sentence to ""
 
 - made the transNotDict useState hook more global by using Contexts. set up the context and used it according ✅
-    - learned how to access a single useState variable globally by using Context, Provider, and UseContext :)
+    - **learned how to access a single useState variable globally by using Context, Provider, and UseContext :)**
 
 - expand top section? when viewing connections, extensive def... ✅
     - should show other defs from the korean dictionary api if there is more space?
@@ -59,10 +59,10 @@
 - list all definitions from a list of words in dictionary section ✅
 
 - connected local fastapi server to frontend localhost (10.2.2.1 for android emulator) ✅
-    - learned about connecting server and emulator/local machine (e.g. CORS)
+    - **learned about connecting server and emulator/local machine (e.g. CORS)**
 
 - save icon should be connected to every word ✅
-    - learned about importance of asynchrony in database operations (async/await/promise)  
+    - **learned about importance of asynchrony in database operations (async/await/promise)**  
 - delete entries from database ✅
     
 - KONLPY!! IMPLEMENT IT :) ✅
@@ -82,7 +82,7 @@
 - touch onPress isn't as reactive as desired... ✅
     - maybe change it to a touchableopacity ✅
     
-- set up FastAPI but struggling to connect it with frontend... ✅
+- **set up FastAPI** (but struggling to connect it with frontend...) ✅
 - figured out the KONLPY module and picked the best options (okt > kkma > ...) ✅
 
 - set up database using expo sqlite and adding and viewing data entries ✅
