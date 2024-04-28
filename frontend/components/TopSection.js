@@ -60,7 +60,16 @@ const TopSection = ({ highlightedWord }) => {
     return (
         <View style={styles.topSection}>
 
-            <Text style={{ fontSize: 18, position: 'absolute', top:8, left:13 }}>{highlightedWord}</Text>
+            <Text style={{ fontSize: 18, position: 'absolute', top:8, left:13 }}>
+                {transNotDict 
+                ? <Text>{highlightedWord}</Text>
+                : <Text>
+                    {type === 'papago' 
+                        ? <Text style={{ fontWeight: 'bold' }}>Papago</Text> 
+                        : <Text style={{ fontWeight: 'bold' }}>Google</Text>}
+                </Text>
+                }
+            </Text>
             
             {/* toggle between translator and dictionary */}
             <TouchableOpacity onPress={toggleContent} style={styles.lookup}>
@@ -137,7 +146,7 @@ const TopSection = ({ highlightedWord }) => {
             ) : (
             <ScrollView style={{ marginTop: 30 }}>
                 <Switch
-                    value={type === 'google'}
+                    value={type}
                     onValueChange={handleTypeChange}
                     style={{ top: -12, right: -42, transform: [{ scaleX: .8 }, { scaleY: .8 }] }}
                 />
@@ -150,8 +159,8 @@ const TopSection = ({ highlightedWord }) => {
                 />
                 <Text style={{ position: 'absolute', top: 0}}>
                     {type === 'papago' 
-                    ? <Text><Text style={{ fontWeight: 'bold' }}>Papago</Text>: {translated}</Text> 
-                    : <Text><Text style={{ fontWeight: 'bold' }}>Google</Text>: {translated}</Text>}
+                    ? <Text>{translated}</Text> 
+                    : <Text>{translated}</Text>}
                 </Text>
             </ScrollView>
             )}
