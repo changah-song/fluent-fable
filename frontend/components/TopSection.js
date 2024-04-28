@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 
 import Translator from 'react-native-translator';
@@ -32,6 +32,10 @@ const TopSection = ({ highlightedWord }) => {
     const stemWordList  = stemWord({ query: highlightedWord });
     const { dictionaryData } = koreanDictionary({ query: stemWordList });
     
+    useEffect(() => {
+        setTranslated('');
+    }, [transNotDict]);
+
     const toggleContent = () => {
         setTransNotDict(!transNotDict);
     };
