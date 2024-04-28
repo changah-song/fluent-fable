@@ -1,13 +1,13 @@
 ## Bugs:
 - text doesn't wrap properly in sentence mode
-- toggle between translators buggy
+- toggle between translators buggy (switch doesn't stay in place and moves back when clicked)
 - papago and google translate produce the same output, probably not calling it properly
-- when toggleing between translator and dictionary, reset highlighted word to ""
+- when switching between modes, previous display lingers.. can make it smoother?
 
 ## Todo:
 
-- i don't think it's necessary to call stemming when in translator mode
-- also, rename the global variable cus it's getting used a lot
+- i don't think it's necessary to call stemming when in translator mode 🟩
+- also, rename the global variable cus it's getting used a lot 🟩
 
 - can highlight many words at a time... 🟨
     - separate from touchopacity thing... or automatically translate entire sentence
@@ -32,6 +32,9 @@
 - flashcard section ... 🟥
 
 ## Done
+
+- when toggleing between translator and dictionary, reset highlighted word to ""
+    - and translated sentence to ""
 
 - made the transNotDict useState hook more global by using Contexts. set up the context and used it according ✅
     - learned how to access a single useState variable globally by using Context, Provider, and UseContext :)
