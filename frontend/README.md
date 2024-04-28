@@ -5,6 +5,7 @@
 - can highlight many words at a time... 🟨
     - separate from touchopacity thing... or automatically translate entire sentence
     - click again to highlight long sentence
+    - the current solution is problematic, the text doesn't wrap and seems clunky
 
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
