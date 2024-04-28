@@ -1,6 +1,5 @@
 ## Bugs:
 - text doesn't wrap properly in sentence mode
-- toggle between translators buggy (switch doesn't stay in place and moves back when clicked)
 - papago and google translate produce the same output, probably not calling it properly
 - when switching between modes, previous display lingers.. can make it smoother?
 
@@ -33,7 +32,8 @@
 
 ## Done
 
-- when toggleing between translator and dictionary, reset highlighted word to ""
+- toggle between translators buggy (switch doesn't stay in place and moves back when clicked) ✅
+- when toggleing between translator and dictionary, reset highlighted word to "" ✅
     - and translated sentence to ""
 
 - made the transNotDict useState hook more global by using Contexts. set up the context and used it according ✅

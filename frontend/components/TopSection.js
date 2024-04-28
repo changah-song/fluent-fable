@@ -150,7 +150,7 @@ const TopSection = ({ highlightedWord }) => {
             ) : (
             <ScrollView style={{ marginTop: 30 }}>
                 <Switch
-                    value={type}
+                    value={type === 'papago'}
                     onValueChange={handleTypeChange}
                     style={{ top: -12, right: -42, transform: [{ scaleX: .8 }, { scaleY: .8 }] }}
                 />
