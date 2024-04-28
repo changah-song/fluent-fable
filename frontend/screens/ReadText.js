@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import BottomSection from '../components/BottomSection';
 import TopSection from '../components/TopSection';
+import { AppProvider } from '../contexts/AppContext';
 
 const ReadText = () => {
   const [highlightedWord, setHighlightedWord] = useState('');
@@ -9,8 +10,10 @@ const ReadText = () => {
 
   return (
     <View style={styles.container}>
-      <TopSection highlightedWord={highlightedWord} />
-      <BottomSection text={text} setHighlightedWord={setHighlightedWord} />
+      <AppProvider>
+        <TopSection highlightedWord={highlightedWord} />
+        <BottomSection text={text} setHighlightedWord={setHighlightedWord} />
+      </AppProvider>
     </View>
   );
 };
