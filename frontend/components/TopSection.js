@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch, CheckBox } from 'react-native';
+import React, { useState } from 'react';
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 
 import Translator from 'react-native-translator';
 import koreanDictionary from './api/koreanDictionary';
@@ -9,9 +9,13 @@ import { Feather } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 
-import { insertData, removeData } from './Database';
+import { insertData, removeData } from './Database'; // import database
+import { useAppContext } from '../contexts/AppContext'; // import context
 
 const TopSection = ({ highlightedWord }) => {
+    //  use the context for status of topssection
+    const { transNotDict, setTransNotDict } = useAppContext();
+
     // handles 'more' and 'less' to control how much info is displayed from dictionary def
     const [expandedWords, setExpandedWords] = useState([]);
     const toggleExpanded = (word) => {
@@ -23,7 +27,6 @@ const TopSection = ({ highlightedWord }) => {
     const [translated, setTranslated] = useState(''); 
     const [type, setType] = useState('papago');
     
-    const [transNotDict, setTransNotDict] = useState(true);
     const [savedWords, setSavedWords] = useState({});
 
     const stemWordList  = stemWord({ query: highlightedWord });
