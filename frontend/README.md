@@ -2,8 +2,12 @@
 - text doesn't wrap properly in sentence mode
 - toggle between translators buggy
 - papago and google translate produce the same output, probably not calling it properly
+- when toggleing between translator and dictionary, reset highlighted word to ""
 
 ## Todo:
+
+- i don't think it's necessary to call stemming when in translator mode
+- also, rename the global variable cus it's getting used a lot
 
 - can highlight many words at a time... 🟨
     - separate from touchopacity thing... or automatically translate entire sentence
