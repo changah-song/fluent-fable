@@ -2,9 +2,10 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
+
 const BottomSection = ({ text, setHighlightedWord }) => {
     // use context for word or sentence mode of bottomsection
-    const { transNotDict } = useAppContext();
+    const { dictMode } = useAppContext();
     const [pressedWord, setPressedWord] = useState("");
 
     // if it's highlighted already, and is pressed again, highlight 
@@ -16,7 +17,7 @@ const BottomSection = ({ text, setHighlightedWord }) => {
 
     useEffect(() => {
         setHighlightedWord("");
-    }, [transNotDict]);
+    }, [dictMode]);
   
     const words = text.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
     const sentences = text.match(/[^.!?]+[.!?]/g);
@@ -24,7 +25,7 @@ const BottomSection = ({ text, setHighlightedWord }) => {
     return (
         <View style={styles.bottomSection}>
             <Text style={styles.text}>
-                {transNotDict ? (
+                {dictMode ? (
                     // display the individual words
                     words.map((word, index) => {
                         const strippedWord = word.match(/[\p{L}\p{N}]+/gu) ? word : null;

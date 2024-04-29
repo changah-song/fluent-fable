@@ -14,7 +14,7 @@ import { useAppContext } from '../contexts/AppContext'; // import context
 
 const TopSection = ({ highlightedWord }) => {
     //  use the context for status of topssection
-    const { transNotDict, setTransNotDict } = useAppContext();
+    const { dictMode, setDictMode } = useAppContext();
 
     // handles 'more' and 'less' to control how much info is displayed from dictionary def
     const [expandedWords, setExpandedWords] = useState([]);
@@ -34,10 +34,10 @@ const TopSection = ({ highlightedWord }) => {
     
     useEffect(() => {
         setTranslated('');
-    }, [transNotDict]);
+    }, [dictMode]);
 
     const toggleContent = () => {
-        setTransNotDict(!transNotDict);
+        setDictMode(!dictMode);
     };
 
     const handleTypeChange = () => {
@@ -65,7 +65,7 @@ const TopSection = ({ highlightedWord }) => {
         <View style={styles.topSection}>
 
             <Text style={{ fontSize: 18, position: 'absolute', top:8, left:13 }}>
-                {transNotDict 
+                {dictMode 
                 ? <Text>{highlightedWord}</Text>
                 : <Text>
                     {type === 'papago' 
@@ -77,10 +77,10 @@ const TopSection = ({ highlightedWord }) => {
             
             {/* toggle between translator and dictionary */}
             <TouchableOpacity onPress={toggleContent} style={styles.lookup}>
-                {transNotDict ? <MaterialIcons name="translate" size={25} color="black" /> : <Feather name="book-open" size={25} color="black" />}
+                {dictMode ? <MaterialIcons name="translate" size={25} color="black" /> : <Feather name="book-open" size={25} color="black" />}
             </TouchableOpacity>
                 
-            {transNotDict ? (
+            {dictMode ? (
             <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
                 {stemWordList.map((word, index) => (
                     <View key={index}>
