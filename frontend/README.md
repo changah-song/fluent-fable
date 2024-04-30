@@ -1,16 +1,11 @@
 ## Bugs:
-- text doesn't wrap properly in sentence mode
 - papago and google translate produce the same output, probably not calling it properly
 - when switching between modes, previous display lingers.. can make it smoother?
 
 ## Todo:
 
 - i don't think it's necessary to call stemming when in translator mode 🟩
-- also, rename the global variable cus it's getting used a lot 🟩
-
-- can highlight many words at a time... 🟨
-    - separate from touchopacity thing... or automatically translate entire sentence
-    - click again to highlight long sentence
+- click again to highlight long sentence
 
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
@@ -32,6 +27,11 @@
 
 ## Done
 
+- text doesn't wrap properly in sentence mode
+- can highlight many words at a time... 🟨
+    - separate from touchopacity thing... or automatically translate entire sentence
+
+- also, rename the global variable cus it's getting used a lot ✅
 - toggle between translators buggy (switch doesn't stay in place and moves back when clicked) ✅
 - when toggleing between translator and dictionary, reset highlighted word to "" ✅
     - and translated sentence to ""

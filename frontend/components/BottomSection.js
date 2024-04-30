@@ -30,9 +30,9 @@ const BottomSection = ({ text, setHighlightedWord }) => {
                     words.map((word, index) => {
                         const strippedWord = word.match(/[\p{L}\p{N}]+/gu) ? word : null;
                         return (
-                            <TouchableOpacity key={index} onPress={() => strippedWord && handleWordPress(strippedWord)} style={pressedWord === strippedWord ? styles.highlighted : null}>
+                            <Text key={index} onPress={() => strippedWord && handleWordPress(strippedWord)} style={pressedWord === strippedWord ? styles.highlighted : null}>
                                 <Text style={styles.text}>{word}{''}</Text>
-                            </TouchableOpacity>
+                            </Text>
                         );
                     })
                 ) : (
@@ -40,9 +40,9 @@ const BottomSection = ({ text, setHighlightedWord }) => {
                     // display sentences joined together         
                     sentences.map((sentence, index) => {
                         return (
-                            <TouchableOpacity key={index} onPress={() => handleWordPress(sentence)} style={pressedWord === sentence ? styles.highlighted : null}>
+                            <Text key={index} onPress={() => handleWordPress(sentence)} style={pressedWord === sentence ? styles.highlighted : null}>
                                 <Text style={styles.text}>{sentence}{''}</Text>
-                            </TouchableOpacity>
+                            </Text>
                         )
                     })
 
@@ -53,14 +53,16 @@ const BottomSection = ({ text, setHighlightedWord }) => {
   };
 
 const styles = StyleSheet.create({
+
   bottomSection: {
     position: 'absolute',
     bottom: 0,
     height: '90%',
     justifyContent: 'center',
     alignItems: 'left',
-    padding: '10%',
-    width: '120%',
+    paddingLeft: '5%',
+    paddingRight: '5%',
+    width: '100%'
   },
   text: {
     fontSize: 18,
@@ -71,6 +73,7 @@ const styles = StyleSheet.create({
   highlighted: {
     backgroundColor: '#D5DEE0',
   },
+
 });
 
 export default BottomSection;
