@@ -161,7 +161,7 @@ const TopSection = ({ highlightedWord }) => {
                 type={type}
                 onTranslated={(t) => setTranslated(t)}
                 />
-                <Text style={{ position: 'absolute', top: 0}}>
+                <Text style={{ position: 'absolute', top: 0, width: '94%'}}>
                     {type === 'papago' 
                     ? <Text>{translated}</Text> 
                     : <Text>{translated}</Text>}
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     },
     content: {
         left: 25,
-        flexDirection: 'row'
+        flexDirection: 'row'    
     }
 
 });
