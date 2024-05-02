@@ -11,42 +11,49 @@ const BottomSection = ({ text, setHighlightedWord }) => {
     // if it's highlighted already, and is pressed again, highlight 
     // more given that the translator mode is on
     const handleWordPress = (word) => {
-      setHighlightedWord(word);
-      setPressedWord(word);
+        if (pressedWord === word[1] && !dictMode) {
+            // highlighted word is the sentence
+            setHighlightedWord(sentences[word[0]]);
+            setPressedWord(sentences[word[0]]);
+        } else {
+            setHighlightedWord(word[1]);
+            setPressedWord(word[1]);
+        }
     };
 
     useEffect(() => {
         setHighlightedWord("");
     }, [dictMode]);
   
-    const words = text.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
+    //const words = text.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
+    //const sentences = text.match(/[^.!?]+[.!?]/g);
+
     const sentences = text.match(/[^.!?]+[.!?]/g);
+    const words = [];
+
+    sentences.forEach((sentence, sentenceIndex) => {
+        const sentenceWords = sentence.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
+        sentenceWords.forEach((word, _) => {
+            words.push([sentenceIndex, word]);
+        });
+    });
 
     return (
         <View style={styles.bottomSection}>
             <Text style={styles.text}>
-                {dictMode ? (
-                    // display the individual words
-                    words.map((word, index) => {
-                        const strippedWord = word.match(/[\p{L}\p{N}]+/gu) ? word : null;
-                        return (
-                            <Text key={index} onPress={() => strippedWord && handleWordPress(strippedWord)} style={pressedWord === strippedWord ? styles.highlighted : null}>
-                                <Text style={styles.text}>{word}{''}</Text>
-                            </Text>
-                        );
-                    })
-                ) : (
-
-                    // display sentences joined together         
-                    sentences.map((sentence, index) => {
-                        return (
-                            <Text key={index} onPress={() => handleWordPress(sentence)} style={pressedWord === sentence ? styles.highlighted : null}>
-                                <Text style={styles.text}>{sentence}{''}</Text>
-                            </Text>
-                        )
-                    })
-
-                )}  
+                {words.map((word, index) => {
+                    const strippedWord = word[1].match(/[\p{L}\p{N}]+/gu) ? word : null;
+                    return (
+                        <TouchableOpacity 
+                            key={index} 
+                            onPress={() => strippedWord && handleWordPress(strippedWord)} 
+                            // checks if strippedWord is null or not and then does the rest for styling
+                            style={strippedWord ? (pressedWord === strippedWord[1] ? styles.highlighted : null) : null}
+                        >
+                            <Text style={styles.text}>{word[1]}{''}</Text>
+                        </TouchableOpacity>
+                    );
+                })}
             </Text>
         </View>
     );

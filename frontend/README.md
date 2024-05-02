@@ -5,7 +5,6 @@
 ## Todo:
 
 - i don't think it's necessary to call stemming when in translator mode 🟩
-- click again to highlight long sentence
 
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
@@ -27,8 +26,9 @@
 
 ## Done
 
-- text doesn't wrap properly in sentence mode
-- can highlight many words at a time... 🟨
+- click again to highlight long sentence ✅
+- text doesn't wrap properly in sentence mode✅
+- can highlight many words at a time... ✅
     - separate from touchopacity thing... or automatically translate entire sentence
 
 - also, rename the global variable cus it's getting used a lot ✅
