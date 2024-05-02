@@ -7,23 +7,27 @@ const BottomSection = ({ text, setHighlightedWord }) => {
     // use context for word or sentence mode of bottomsection
     const { dictMode } = useAppContext();
     const [pressedWord, setPressedWord] = useState("");
+    const [sentenceMode, setSentenceMode] = useState(true);
 
     // if it's highlighted already, and is pressed again, highlight 
     // more given that the translator mode is on
     const handleWordPress = (word) => {
         if (pressedWord === word[1] && !dictMode) {
             // highlighted word is the sentence
+            setSentenceMode(false);
             setHighlightedWord(sentences[word[0]]);
             setPressedWord(sentences[word[0]]);
         } else {
+            setSentenceMode(true);
             setHighlightedWord(word[1]);
             setPressedWord(word[1]);
         }
     };
 
+    // this should only remove if a sentence is highlighted
     useEffect(() => {
         setHighlightedWord("");
-    }, [dictMode]);
+    }, [sentenceMode]);
   
     //const words = text.match(/[\p{Script=Hangul}]+|[a-zA-Z]+|[^\p{Script=Hangul}\w]|[\d]+/gu);
     //const sentences = text.match(/[^.!?]+[.!?]/g);
