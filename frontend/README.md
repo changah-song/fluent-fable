@@ -1,10 +1,12 @@
 ## Bugs:
-- papago and google translate produce the same output, probably not calling it properly
-- when switching between modes, previous display lingers.. can make it smoother?
 
 ## Todo:
 
-- i don't think it's necessary to call stemming when in translator mode 🟩
+- i don't think it's necessary to call stemming when in translator mode 🟥
+- change toggle from switch to sliding touchableopacity 🟨
+- loading indication when changing text.. 🟨
+- highlighting sentence when pressed again 🟨
+- papago and google not working properly 🟨 
 
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
@@ -26,6 +28,9 @@
 
 ## Done
 
+- file structure much better and readable. good React practice learned
+    - learned an Effect is best used and when not
+    - "Thinking in React" tutorial was very useful and still more to learn
 - click again to highlight long sentence ✅
 - text doesn't wrap properly in sentence mode✅
 - can highlight many words at a time... ✅
