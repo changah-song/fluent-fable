@@ -24,11 +24,9 @@ const BottomSection = ({ text, setHighlightedWord }) => {
         }
     };
 
-    // this should only remove if a sentence is highlighted
+    // this should only remove translation content if a sentence is highlighted
     useEffect(() => {
-        if (wordMode) {
-            return; // Do nothing
-        } else {
+        if (!wordMode) {
             setHighlightedWord("");
         }
     }, [dictMode]);
