@@ -19,7 +19,7 @@ const TopSection = ({ highlightedWord }) => {
     return (
         <View style={styles.topSection}>
             {/* shows highlighted word, header */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ position: 'absolute', top:8, left:13, width: '90%' }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ position: 'absolute', top:8, left:13, width: '85%' }}>
                 <Text style={{ fontSize: 18 }}>{highlightedWord}</Text>
             </ScrollView>
             
@@ -32,7 +32,7 @@ const TopSection = ({ highlightedWord }) => {
             {dictMode ? 
             <DictionaryContent highlightedWord={highlightedWord}/> : 
             <TranslationContent highlightedWord={highlightedWord}/>}
-            
+
         </View>
     );
   };

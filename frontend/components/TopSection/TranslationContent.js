@@ -1,67 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, ScrollView, StyleSheet, Switch } from 'react-native';
-import { useTranslator } from 'react-native-translator';
+import { Text, View, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
+import Translator from 'react-native-translator';
+import { AntDesign } from '@expo/vector-icons';
 
 // Translator Component
 const TranslationContent = ({ highlightedWord }) => {
     // global variable
     const { dictMode } = useAppContext();
-
-    // store current translated word and translator service
+  
+      // store current translated word and translator service
     const [translated, setTranslated] = useState(''); 
     const [service, setService] = useState('papago');
     // initialize translator object
-    const { translate } = useTranslator();
 
     // reset translated word if mode changes
     useEffect(() => {
         setTranslated('');
     }, [dictMode]);
 
-    // Whenever highlightedWord or service changes, update the translation
-    useEffect(() => {
-        if (highlightedWord) {
-          translateText();
-        }
-    }, [highlightedWord, service]);
-    
     // once switch is pressed, change service to the other one
     const handleTypeChange = () => {
         setService(service === 'papago' ? 'google' : 'papago');
     };    
 
-    // calls the Translator promise to translate highlightedWord
-    const translateText = async () => {
-        if (highlightedWord) {
-            try{ 
-                const translation = await translate('ko', 'en', highlightedWord, { service });
-                setTranslated(translation);
-            } catch(error) {
-                console.error('Translation failed:', error);
-                setTranslated('Translation failed');
-            }
-        }
-    };
-
     return (
         <View style={{ flex: 1 }}>
-            <Switch
-                    value={service === 'papago'}
-                    onValueChange={handleTypeChange}
-                    style={{ position: 'absolute', right: 20, top: 50, transform: [{ scaleX: .8 }, { scaleY: .8 }] }}
+            <View style={{ flexDirection: 'row', position: 'absolute', right: 0, top: 33 }}>
+                <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ opacity: service==='papago' ? 1 : 0.3 }}>
+                    <View style={[styles.imageContainer, { borderTopLeftRadius: 10, borderBottomLeftRadius: 10 }]}>
+                        <Image source={require('../../assets/papagoicon.png')} style={styles.image} />
+                    </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ opacity: service==='google' ? 1 : 0.3 }}>
+                    <View style={[styles.imageContainer, { borderTopRightRadius: 10, borderBottomRightRadius: 10 }]}>
+                        <Image source={require('../../assets/googletranslateicon.png')} style={styles.image} />
+                    </View>
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ marginTop: 30, width:'80%' }}>
+                <Translator
+                    from="ko"
+                    to="en"
+                    value={highlightedWord}
+                    type={service}
+                    onTranslated={(t) => setTranslated(t)}
                 />
-            <ScrollView style={{ marginTop: 30 }}>
-                {translated ? (
-                    <Text style={{ flex: 0.8, width: '95%' }}>{translated}</Text>
-                ) : (
-                    <Text style={{ flex: 1, width: '95%'}}>No translation available</Text>
-                )}
+                <Text>{translated}</Text>
             </ScrollView>   
         </View>
     )
 };
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+    imageContainer: {
+        borderWidth: 1, 
+        borderColor: 'black', 
+        padding: 2,
+        backgroundColor: 'lightgray'
+    },
+    image: {
+        width: 20,
+        height: 20,
+    },
+});
 
 export default TranslationContent
