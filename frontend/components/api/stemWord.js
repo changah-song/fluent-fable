@@ -1,4 +1,3 @@
-import { StyleSheet } from 'react-native';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -52,5 +51,3 @@ const stemWord = ( {query} ) => {
 }
 
 export default stemWord
-
-const styles = StyleSheet.create({})
