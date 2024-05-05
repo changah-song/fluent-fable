@@ -4,7 +4,6 @@ import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEff
 
 import { viewData } from '../components/Database';
 
-import Translator from 'react-native-translator';
 
 const Flashcard = () => {
   const [words, setWords] = useState([]);
@@ -35,22 +34,6 @@ const Flashcard = () => {
     return words.map((word, index) => {
       return (
         <View key={index}>
-          <Translator
-            from="ko"
-            to="en"
-            value={"아이돌 팬들은 최애 멤버의 포토카드를 활용하기도 한다"}
-            type={"google"}
-            onTranslated={(t) => setResult(t)}
-          />
-          <Text>GOOGLE: {result}</Text>
-          <Translator
-            from="ko"
-            to="en"
-            value={"아이돌 팬들은 최애 멤버의 포토카드를 활용하기도 한다."}
-            type={"papago"}
-            onTranslated={(t) => setResult2(t)}
-          />
-          <Text>PAPAGO: {result2}</Text>
           {word.word && <Text>Word: {word.word}</Text>}
           {word.def && <Text>Definition: {word.def}</Text>}
           {word.hanja && <Text>Hanja: {word.hanja}</Text>}

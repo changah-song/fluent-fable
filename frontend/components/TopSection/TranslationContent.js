@@ -20,7 +20,7 @@ const TranslationContent = ({ highlightedWord }) => {
     useEffect(() => {
         setGooTranslated('');
         setPapTranslated('');
-    }, [dictMode]);
+    }, [dictMode, service]);
 
     // once switch is pressed, change service to the other one
     const handleTypeChange = () => {
