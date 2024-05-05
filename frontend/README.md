@@ -2,12 +2,8 @@
 
 ## Todo:
 
-- loading indication when changing text.. 🟥
-- highlighting sentence when pressed again 🟨
-- papago and google not switching properly 🟨
-
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
-- modal popup when hanja is pressed
+
 - HANJA CONNECTION !! make the dictionary top section more detailed 🟥
     - locate hanja if existing
     // can be multiple hanjas
@@ -23,9 +19,13 @@
 - user login 🟥
 
 - flashcard section ... 🟥
+- highlighting sentence when pressed again (why is it so hard!! ahhhh) 🟥
 
 ## Done
 
+- modal popup when hanja is pressed ✅
+
+- papago and google switching properly ✅
 - change toggle from switch to sliding touchableopacity ✅
 - i don't think it's necessary to call stemming when in translator mode ✅
     - solved by separation of concerns and better file managing :))
@@ -108,6 +108,7 @@
 
 ## Non-MVP Topics
 
+- highlighting sentence when pressed again 🟨
 - make the definition where the word is equal to the highlightedword to show in topsection before 'more' is pressed.
 - currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
     - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
@@ -115,7 +116,7 @@
     - I'm assuming that KKMA library can handle this better,, not high priority 🧨
 - web scraping and getting news ❓
 - home page with list of categories for readings that the user can choose ❓
-
+- loading indication when changing text.. 🟥
 
 --------
 

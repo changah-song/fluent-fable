@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 // API and libraries
 import koreanDictionary from '../api/koreanDictionary';
 import stemWord from '../api/stemWord';
@@ -43,6 +43,12 @@ const DictionaryContent = ({ highlightedWord }) => {
     // check if a word is already saved in the database
     const isWordSaved = (word, origin, definition) => savedWords[(word, origin, definition)] === true;
 
+    // handle the modal for hanja search
+    const [currentHanja, setCurrentHanja] = useState(null);
+    const handleHanjaPress = (hanja) => {
+        setCurrentHanja(hanja);
+    };
+
     return (
         <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
             {stemWordList.map((word, index) => (
@@ -64,9 +70,15 @@ const DictionaryContent = ({ highlightedWord }) => {
                                 <Text style={{ fontWeight: 'bold' }}>{word}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Text style={{ marginHorizontal: 5 }}>(</Text>
-                                    <TouchableOpacity>
-                                        <Text>{dictionaryData[index][0].origin}</Text>
-                                    </TouchableOpacity>
+
+                                    {dictionaryData[index][0].origin.split('').map((hanja, index) => {
+                                        return(
+                                            <TouchableOpacity key={index} onPress={() => handleHanjaPress(hanja)}>
+                                                <Text>{hanja}</Text>
+                                            </TouchableOpacity>
+                                        )
+                                    })}
+
                                     <Text style={{ marginHorizontal: 5 }}>)</Text>
                                     <Text>{dictionaryData[index][0].transWord}</Text>
                                 </View>
@@ -95,9 +107,14 @@ const DictionaryContent = ({ highlightedWord }) => {
                                     <View style={styles.content}>
                                         <Text>{entry.word}</Text>
                                         <Text style={{ marginHorizontal: 5 }}>(</Text>
-                                        <TouchableOpacity>
-                                            <Text>{entry.origin}</Text>
-                                        </TouchableOpacity>
+
+                                        {entry.origin.split('').map((hanja, index) => {
+                                            return(
+                                                <TouchableOpacity key={index} onPress={() => handleHanjaPress(hanja)}>
+                                                    <Text>{hanja}</Text>
+                                                </TouchableOpacity>
+                                            )
+                                        })}
                                             <Text style={{ marginHorizontal: 5 }}>)</Text>
                                             <Text>{entry.transWord}</Text>
                                         </View>
@@ -109,6 +126,17 @@ const DictionaryContent = ({ highlightedWord }) => {
                         )}
                     </View>
                 ))}
+
+            {/* Modal to display selected Hanja */}
+            <Modal visible={currentHanja !== null} animationType="fade" transparent={true}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity style={styles.cancel} onPress={() => setCurrentHanja(null)}></TouchableOpacity>
+                    <View style={styles.modalContent}>
+                        <Text>{currentHanja}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setCurrentHanja(null)}></TouchableOpacity>
+                </View>
+            </Modal>
         </ScrollView>
     )
 };
@@ -125,6 +153,29 @@ const styles = StyleSheet.create({
     content: {
         left: 25,
         flexDirection: 'row'    
+    },
+    modalContent: {
+        position: 'absolute',
+        width: "90%",
+        height: "65%",
+        top: 220,
+        backgroundColor: 'white', 
+        padding: 10,
+        borderRadius: 10,
+
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    cancel: {
+        position: 'absolute',
+        width: "100%",
+        height: "100%",
+        backgroundColor: 'rgba(168, 162, 158, 0.5)', 
+        opacity: '100%',
+        padding: 10,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center'
     }
 });
 
