@@ -4,13 +4,8 @@
 
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 
-- HANJA CONNECTION !! make the dictionary top section more detailed 🟥
-    - locate hanja if existing
-    // can be multiple hanjas
-    // show only most common
-    // ... hanja definition API?? 
-    - show origin and POS and don't show repeats..
-    - visualization would be fun: google: 'matplotlib data network graph'
+- HANJA CONNECTION !! make the dictionary top section more detailed 🟨
+    - currently, the website API is not working.. need to know if it's blocked
 
 - loading indication when translating and dictionary... 🟨
     - when a word is clicked, immeidately show loading (with gif?)
@@ -117,7 +112,7 @@
 - web scraping and getting news ❓
 - home page with list of categories for readings that the user can choose ❓
 - loading indication when changing text.. 🟥
-
+- visualization would be fun: google: 'matplotlib data network graph'🟥
 --------
 
 PAST IDEA FOR AI PROMPTS
