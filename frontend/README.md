@@ -2,11 +2,9 @@
 
 ## Todo:
 
-- i don't think it's necessary to call stemming when in translator mode 🟥
-- change toggle from switch to sliding touchableopacity 🟨
-- loading indication when changing text.. 🟨
+- loading indication when changing text.. 🟥
 - highlighting sentence when pressed again 🟨
-- papago and google not working properly 🟨 
+- papago and google not switching properly 🟨
 
 - check for hanja in origin (it can be english) and make each character clickable 🟨 
 - modal popup when hanja is pressed
@@ -27,6 +25,10 @@
 - flashcard section ... 🟥
 
 ## Done
+
+- change toggle from switch to sliding touchableopacity ✅
+- i don't think it's necessary to call stemming when in translator mode ✅
+    - solved by separation of concerns and better file managing :))
 
 - file structure much better and readable. good React practice learned
     - learned an Effect is best used and when not

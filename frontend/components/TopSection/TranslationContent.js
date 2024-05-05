@@ -10,13 +10,16 @@ const TranslationContent = ({ highlightedWord }) => {
     const { dictMode } = useAppContext();
   
       // store current translated word and translator service
-    const [translated, setTranslated] = useState(''); 
+    const [gootranslated, setGooTranslated] = useState(''); 
+    const [papTranslated, setPapTranslated] = useState('');
+
     const [service, setService] = useState('papago');
     // initialize translator object
 
     // reset translated word if mode changes
     useEffect(() => {
-        setTranslated('');
+        setGooTranslated('');
+        setPapTranslated('');
     }, [dictMode]);
 
     // once switch is pressed, change service to the other one
@@ -26,7 +29,7 @@ const TranslationContent = ({ highlightedWord }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', position: 'absolute', right: 0, top: 33 }}>
+            <View style={{ flexDirection: 'row', position: 'absolute', right: 0, top: 80 }}>
                 <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ opacity: service==='papago' ? 1 : 0.3 }}>
                     <View style={[styles.imageContainer, { borderTopLeftRadius: 10, borderBottomLeftRadius: 10 }]}>
                         <Image source={require('../../assets/papagoicon.png')} style={styles.image} />
@@ -44,10 +47,17 @@ const TranslationContent = ({ highlightedWord }) => {
                     from="ko"
                     to="en"
                     value={highlightedWord}
-                    type={service}
-                    onTranslated={(t) => setTranslated(t)}
+                    type={'google'}
+                    onTranslated={(t) => setGooTranslated(t)}
+                />                
+                <Translator
+                    from="ko"
+                    to="en"
+                    value={highlightedWord}
+                    type={'papago'}
+                    onTranslated={(t) => setPapTranslated(t)}
                 />
-                <Text>{translated}</Text>
+                {service === 'papago' ? <Text>{papTranslated}</Text> : <Text>{gootranslated}</Text>}
             </ScrollView>   
         </View>
     )
@@ -61,8 +71,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'lightgray'
     },
     image: {
-        width: 20,
-        height: 20,
+        width: 25,
+        height: 25,
     },
 });
 
