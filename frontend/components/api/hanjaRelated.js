@@ -3,6 +3,9 @@ import axios from 'axios';
 
 const hanjaRelated = ( {hanja} ) => {
     const [content, setContent] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    
     const url = `https://koreanhanja.app/`;
 
     const options = {
