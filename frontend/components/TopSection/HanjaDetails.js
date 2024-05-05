@@ -1,12 +1,19 @@
 import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import hanjaRelated from '../api/hanjaRelated';
 
 const HanjaDetails = ({ hanja, handleHanjaPress }) => {
+    const result = hanjaRelated({ query: hanja })
     return (
         <Modal visible={hanja !== null} animationType="fade" transparent={true}>
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <TouchableOpacity style={styles.cancel} onPress={() => handleHanjaPress(null)}></TouchableOpacity>
                 <View style={styles.modalContent}>
                     <Text>{hanja}</Text>
+                    {result.map((word, index) => {
+                        return (
+                            <Text key={index}>{word[0]}({word[2]}) {word[1]}</Text>
+                        )
+                    })}
                 </View>
                 <TouchableOpacity onPress={() => handleHanjaPress(null)}></TouchableOpacity>
             </View>
