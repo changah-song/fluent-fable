@@ -28,7 +28,9 @@ const hanjaRelated = ( {hanja} ) => {
 
     useEffect(() => {
         fetchData();
-    }, [hanja])
+    }, [hanja]);
+
+    return content;
 }
 
 export default hanjaRelated
