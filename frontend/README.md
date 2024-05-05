@@ -15,6 +15,11 @@
 
 - flashcard section ... 🟥
 - highlighting sentence when pressed again (why is it so hard!! ahhhh) 🟥
+    - learned about UI styling :(( Text and View have some specific interactions
+        - Text inside Text makes it possible to wrap around well and connect
+        - Text cannot have background color if it's not merely word inside
+        - View has flexwrap, alignself, alignitems, etc.
+    - need to figure out how to make it wrap (Text-Text) while also having color within... (which means we can't use Text).. but also (View-Text) doesn't seem to work.. it doesn't wrap properly (new line for each Text)..hmmm
 
 ## Done
 
