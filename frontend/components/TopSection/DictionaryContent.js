@@ -7,6 +7,8 @@ import stemWord from '../api/stemWord';
 import { AntDesign } from '@expo/vector-icons';
 // database and context
 import { insertData, removeData } from '../Database'; // import database
+// modal component
+import HanjaDetails from './HanjaDetails';
 
 // Dictionary Component
 const DictionaryContent = ({ highlightedWord }) => {
@@ -128,15 +130,7 @@ const DictionaryContent = ({ highlightedWord }) => {
                 ))}
 
             {/* Modal to display selected Hanja */}
-            <Modal visible={currentHanja !== null} animationType="fade" transparent={true}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <TouchableOpacity style={styles.cancel} onPress={() => setCurrentHanja(null)}></TouchableOpacity>
-                    <View style={styles.modalContent}>
-                        <Text>{currentHanja}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setCurrentHanja(null)}></TouchableOpacity>
-                </View>
-            </Modal>
+            <HanjaDetails hanja={currentHanja} handleHanjaPress={handleHanjaPress} />
         </ScrollView>
     )
 };
@@ -153,29 +147,6 @@ const styles = StyleSheet.create({
     content: {
         left: 25,
         flexDirection: 'row'    
-    },
-    modalContent: {
-        position: 'absolute',
-        width: "90%",
-        height: "65%",
-        top: 220,
-        backgroundColor: 'white', 
-        padding: 10,
-        borderRadius: 10,
-
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    cancel: {
-        position: 'absolute',
-        width: "100%",
-        height: "100%",
-        backgroundColor: 'rgba(168, 162, 158, 0.5)', 
-        opacity: '100%',
-        padding: 10,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center'
     }
 });
 
