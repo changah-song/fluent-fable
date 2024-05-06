@@ -4,43 +4,50 @@ import 'react-xml-parser';
 
 const hanjaRelated = ({ query }) => {
     // list of array [korean, definition, hanja]
-    const [content, setContent] = useState([]);
+    const [firstTableData, setFirstTableData] = useState([]);
+    const [similarWordsTableData, setSimilarWordsTableData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const url = `https://koreanhanja.app/`;
+    const cleanMeaning = (meaning) => {
+        // Regular expression to remove anything from <a href onward
+        const cleanString = meaning.replace(/\s*\(\s*<\s*a\s.*$/g, '');
+        return cleanString;
+    }
 
     const fetchData = async () => {
         try {
+            if (!query) {
+                // Return blank if query is null
+                setFirstTableData([]);
+                setSimilarWordsTableData([]);
+                return;
+            }
             let result = [];
             const response = await axios.put(`https://koreanhanja.app/${encodeURIComponent(query)}`);
-            // Extract HTML content from the response
             const htmlContent = response.data;
 
             // Parse HTML content using DOMParser
             var ReactXmlParser = require('react-xml-parser');
             const htmlDocument = new ReactXmlParser().parseFromString(htmlContent);
             
-            // Find all tables in the HTML document
-            const rows = htmlDocument.getElementsByTagName('tr');
+            // Extract data from the first table
+            const firstTableRows = htmlDocument.getElementsByTagName('table')[0].getElementsByTagName('tr');
+            const firstTableData = firstTableRows.map(row => ({
+                hanja: row.getElementsByTagName('td')[0].getElementsByTagName('a')[0].value,
+                meaning: row.getElementsByTagName('td')[1].value.trim().replace(/\s*\(\d+\)$/, ''),
+            }));
+            setFirstTableData(firstTableData);
 
-            rows.forEach(row => {
-                const temp = [];
-                // access the hanja
-                const hanjaPart = row.getElementsByTagName('td')[0].getElementsByTagName('a')[0].value;
-                // access the korean and definition
-                const korDefPart = row.getElementsByTagName('td');
-                korDefPart.forEach(cell => {
-                    // Access the content of the cell
-                    temp.push(cell.value.trim())
-                });
-                temp.push(hanjaPart)
-                result.push(temp.slice(1))
-            });
-            
-            setContent(result);
-            console.log('hmmm', query, result);
+            // Extract data from the similar words table
+            const similarWordsTableRows = htmlDocument.getElementsByTagName('table')[1].getElementsByTagName('tr');
+            const similarWordsTableData = similarWordsTableRows.map(row => ({
+                hanja: row.getElementsByTagName('td')[0].getElementsByTagName('a')[0].value,
+                korean: row.getElementsByTagName('td')[1].value.trim(),
+                meaning: cleanMeaning(row.getElementsByTagName('td')[2].value.trim()),
+            }));
 
+            setSimilarWordsTableData(similarWordsTableData);
         } catch(error) {
             console.error("Error fetching data:", error)
         }
@@ -50,7 +57,7 @@ const hanjaRelated = ({ query }) => {
         fetchData();
     }, [query]);
 
-    return content;
+    return { firstTableData, similarWordsTableData };
 }
 
 export default hanjaRelated

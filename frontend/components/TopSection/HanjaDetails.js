@@ -1,21 +1,41 @@
-import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import hanjaRelated from '../api/hanjaRelated';
 
 const HanjaDetails = ({ hanja, handleHanjaPress }) => {
-    const result = hanjaRelated({ query: hanja })
+    const { firstTableData: title, similarWordsTableData: result } = hanjaRelated({ query: hanja })
     return (
         <Modal visible={hanja !== null} animationType="fade" transparent={true}>
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <TouchableOpacity style={styles.cancel} onPress={() => handleHanjaPress(null)}></TouchableOpacity>
+                
                 <View style={styles.modalContent}>
-                    <Text>{hanja}</Text>
-                    {result.map((word, index) => {
-                        return (
-                            <Text key={index}>{word[0]}({word[2]}) {word[1]}</Text>
-                        )
-                    })}
+                    {result ? 
+                    <View>
+                        <Text>{hanja}</Text>
+                        <ScrollView>
+                            {title.map((word, index) => {
+                                return (
+                                    <Text key={index}>{word.meaning}</Text>
+                                )
+                            })}
+                        </ScrollView>
+                        <ScrollView>
+                            {result.map((word, index) => {
+                                return (
+                                    <Text key={index}>{word.korean}({word.hanja}) {word.meaning}</Text>
+                                )
+                            })}
+                        </ScrollView>
+                    </View>
+                    :
+                    <View>
+                        <Text>{hanja}</Text>
+                        <Text>Not Available...</Text>
+                    </View>
+                    }
+
                 </View>
-                <TouchableOpacity onPress={() => handleHanjaPress(null)}></TouchableOpacity>
+                
             </View>
         </Modal>
     )
