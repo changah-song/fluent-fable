@@ -10,23 +10,25 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                 
                 <View style={styles.modalContent}>
                     {result ? 
-                    <View>
-                        <Text>{hanja}</Text>
-                        <ScrollView>
-                            {title.map((word, index) => {
-                                return (
-                                    <Text key={index}>{word.meaning}</Text>
-                                )
-                            })}
-                        </ScrollView>
-                        <ScrollView>
-                            {result.map((word, index) => {
-                                return (
-                                    <Text key={index}>{word.korean}({word.hanja}) {word.meaning}</Text>
-                                )
-                            })}
-                        </ScrollView>
-                    </View>
+                        <View>
+                            <View style={{flex: 1, flexWrap: 'wrap', flexDirection: 'row'}}>
+                                <Text style={{flex: 0.13, fontSize: 30}}>{hanja}</Text>
+                                <ScrollView style={{flex: 0.87, height: '80%', marginTop: 5}}>
+                                {title.map((word, index) => {
+                                    return (
+                                        <Text key={index} style={{fontWeight: 'bold'}}>{word.meaning} </Text>
+                                    )
+                                })}
+                                </ScrollView>
+                            </View>
+                            <ScrollView style={{height: '80%', top: 0, left: 0}}>
+                                {result.map((word, index) => {
+                                    return (
+                                        <Text key={index} style={{lineHeight: 25}}>{word.korean}({word.hanja}) {word.meaning}</Text>
+                                    )
+                                })}
+                            </ScrollView>
+                        </View>
                     :
                     <View>
                         <Text>{hanja}</Text>
