@@ -2,10 +2,8 @@
 
 ## Todo:
 
-- check for hanja in origin (it can be english) and make each character clickable 🟨 
-
-- HANJA CONNECTION !! make the dictionary top section more detailed 🟨
-    - currently, the website API is not working.. need to know if it's blocked
+- modal
+    - backspace should go to previous modal 🟥
 
 - loading indication when translating and dictionary... 🟨
     - when a word is clicked, immeidately show loading (with gif?)
@@ -13,17 +11,28 @@
 
 - user login 🟥
 
-- flashcard section ... 🟥
+- flashcard section
+    - UI first 🟨
+    - logic behind it (anki, red, yellow, green...)
+
 - highlighting sentence when pressed again (why is it so hard!! ahhhh) 🟥
     - learned about UI styling :(( Text and View have some specific interactions
         - Text inside Text makes it possible to wrap around well and connect
         - Text cannot have background color if it's not merely word inside
         - View has flexwrap, alignself, alignitems, etc.
     - need to figure out how to make it wrap (Text-Text) while also having color within... (which means we can't use Text).. but also (View-Text) doesn't seem to work.. it doesn't wrap properly (new line for each Text)..hmmm
+    - consider removing distinction between modes. one press (dictionary), again press (translator) could be better.
 
 ## Done
 
-- modal popup when hanja is pressed ✅
+- HANJA CONNECTION !! make the dictionary top section more detailed ✅
+    - currently, the website API is not working.. need to know if it's blocked 
+        - nah was just Unicode encoding issue
+
+- check for hanja in origin (it can be english) and make each character clickable ✅
+    - modal hanja clickable to keep digging into unknown hanjas ✅
+    - modal popup looks sleeek ✅
+    - modal popup when hanja is pressed ✅
 
 - papago and google switching properly ✅
 - change toggle from switch to sliding touchableopacity ✅
