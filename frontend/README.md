@@ -117,6 +117,7 @@
 
 ## Non-MVP Topics
 
+- if text is wrapped for the modal header definition, it should be positioned at the top as opposed to the middle when it is not wrapped. better visual :) 🟨
 - highlighting sentence when pressed again 🟨
 - make the definition where the word is equal to the highlightedword to show in topsection before 'more' is pressed.
 - currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
