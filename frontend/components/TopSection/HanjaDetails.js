@@ -2,18 +2,22 @@ import { Text, View, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'rea
 import hanjaRelated from '../api/hanjaRelated';
 
 const HanjaDetails = ({ hanja, handleHanjaPress }) => {
+    // save the API call response to the consts
     const { firstTableData: title, similarWordsTableData: result } = hanjaRelated({ query: hanja })
+
     return (
         <Modal visible={hanja !== null} animationType="fade" transparent={true}>
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+                {/* when pressed outside modal, it should close */}
                 <TouchableOpacity style={styles.cancel} onPress={() => handleHanjaPress(null)}></TouchableOpacity>
                 
+                {/* display all the related words and hanja definition */}
                 <View style={styles.modalContent}>
                     {result ? 
                         <View>
-                            <View style={{flex: 1, flexWrap: 'wrap', flexDirection: 'row'}}>
-                                <Text style={{flex: 0.13, fontSize: 30}}>{hanja}</Text>
-                                <ScrollView style={{flex: 0.87, height: '80%', marginTop: 5}}>
+                            <View style={{flex: 1, flexWrap: 'wrap', flexDirection: 'row', width:'100%'}}>
+                                <Text style={{flex: 0.13, fontSize: 30, marginLeft: 7, marginTop: 2}}>{hanja}</Text>
+                                <ScrollView style={{flex: 0.87, height: '80%', marginTop: 7}}>
                                 {title.map((word, index) => {
                                     return (
                                         <Text key={index} style={{fontWeight: 'bold'}}>{word.meaning} </Text>
