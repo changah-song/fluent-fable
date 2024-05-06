@@ -1,16 +1,21 @@
-# fluent-fable
+# Fluent Fable
 
 Reading is the best way for language acquisition. 
-This app aims to make the process of reading and learning as seamless as possible.
+This app aims to make the process of reading and learning as seamless as possible for Korean learners.
 
-<< Provided Text, Easy Word Lookup, Flashcard Memorization >>
+You can:
+- 📚 **load** books of your choice
+- ☝️ **click once** to see the word's dictionary entry and its Hanja
+- ✌️ **click twice** to see the sentence's translation (Google or Papago)
+- 🔎 **explore** the Hanja of Korean words to form a better understanding and find connections between known words
+- 📝 **learn** vocab through the Flashcard feature using spaced repetition for optimal memorization
 
 Preview of current state:
 
 
 
-https://github.com/paul-song-minerva/fluent-fable/assets/97287057/fc9650b7-02ab-4a48-b7c0-6f346360b28f
+https://github.com/paul-song-minerva/fluent-fable/assets/97287057/da264fda-0b59-4d34-b12c-e213124e4ef7
 
 
-KoNLPy: very helpful for Korean stemming :))
-Eunjeong L. Park, Sungzoon Cho. “KoNLPy: Korean natural language processing in Python”, Proceedings of the 26th Annual Conference on Human & Cognitive Language Technology, Chuncheon, Korea, Oct 2014.
+
+If you have any questions, comments, or suggestions, please email me at paulsong00@uni.minerva.edu :))
