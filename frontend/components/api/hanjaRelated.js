@@ -13,8 +13,7 @@ const hanjaRelated = ({ query }) => {
     const fetchData = async () => {
         try {
             let result = [];
-            const response = await axios.get(url, {text: query});
-            console.log(response);
+            const response = await axios.put(`https://koreanhanja.app/${encodeURIComponent(query)}`);
             // Extract HTML content from the response
             const htmlContent = response.data;
 
