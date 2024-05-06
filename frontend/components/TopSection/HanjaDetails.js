@@ -1,6 +1,8 @@
 import { Text, View, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import hanjaRelated from '../api/hanjaRelated';
 
+
+// this is the modal popup when a hanja is clicked
 const HanjaDetails = ({ hanja, handleHanjaPress }) => {
     // save the API call response to the consts
     const { firstTableData: title, similarWordsTableData: result } = hanjaRelated({ query: hanja })
