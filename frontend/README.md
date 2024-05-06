@@ -146,3 +146,10 @@ Import PDF/EPUD/MOBI (! much more work to implement)
 Other ideas
 
 After five words are learned, create paragraph using those words and save. Suggest them to check it with native speaker (reddit, friends, etc.)
+
+
+
+## Credit:
+
+KoNLPy: very helpful for Korean stemming :))
+Eunjeong L. Park, Sungzoon Cho. “KoNLPy: Korean natural language processing in Python”, Proceedings of the 26th Annual Conference on Human & Cognitive Language Technology, Chuncheon, Korea, Oct 2014.
