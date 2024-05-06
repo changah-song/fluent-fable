@@ -117,12 +117,12 @@ const DictionaryContent = ({ highlightedWord }) => {
                                                 </TouchableOpacity>
                                             )
                                         })}
-                                            <Text style={{ marginHorizontal: 5 }}>)</Text>
-                                            <Text>{entry.transWord}</Text>
-                                        </View>
+                                        <Text style={{ marginHorizontal: 5 }}>)</Text>
+                                        <Text>{entry.transWord}</Text>
                                     </View>
-                                ))}
-                            </>
+                                </View>
+                            ))}
+                        </>
                         ) : (
                             <Text> "Loading..." </Text>
                         )}
