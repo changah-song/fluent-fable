@@ -28,8 +28,8 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                             <ScrollView style={{height: '80%', top: 0, left: 0}}>
                                 {result.map((word, index) => {
                                     return (
-                                        <View key={index} style={{ flexDirection: 'row' }}>
-                                            <Text>{word.korean}(</Text>
+                                        <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                            <Text>{word.korean} ( </Text>
                                             {word.hanja.split('').map((newHanja, index) => {
                                                 return(
                                                     <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
@@ -38,7 +38,7 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                                                     </TouchableOpacity>
                                                 )
                                             })}
-                                            <Text>) {word.meaning}</Text>
+                                            <Text> ) {word.meaning}</Text>
                                         </View>
                                     )
                                 })}
