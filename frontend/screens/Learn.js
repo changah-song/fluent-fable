@@ -21,13 +21,37 @@ import { Text, View } from 'react-native'
 import React , { useState, useEffect } from 'react'
 import ActivityChecker from '../components/Learn/ActivityChecker';
 import ProgressBar from '../components/Learn/ProgressBar';
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+
+import { viewData } from '../components/Database';
 
 const Learn = () => {
+    const [words, setWords] = useState([]);
+    const fetchWords = () => {
+      viewData()
+        .then(data => {
+          setWords(data);
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    };
+    useEffect(() => {
+      fetchWords();
+    }, []);
+  
+    useFocusEffect(
+      React.useCallback(() => {
+        fetchWords(); // Fetch data whenever screen is focused
+      }, [])
+    );
+
+    console.log("current words in list:", words);
 
     return (
         <View>
             <ActivityChecker />
-            <ProgressBar />
+            <ProgressBar data={words.slice(1)}/>
         </View>
     )
 

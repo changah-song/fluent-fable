@@ -1,21 +1,7 @@
 import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
 
-const ProgressBar = () => {
-
-const data = [
-    { word: 'example1', def: 'definition1', hanja: 'hanja1', level: 'unorganized' },
-    { word: 'example2', def: 'definition2', hanja: 'hanja2', level: 'unorganized' },
-    { word: 'example3', def: 'definition3', hanja: 'hanja3', level: 'good' },
-    { word: 'example4', def: 'definition4', hanja: 'hanja4', level: 'mid' },
-    { word: 'example5', def: 'definition5', hanja: 'hanja5', level: 'unorganized' },
-    { word: 'example6', def: 'definition6', hanja: 'hanja6', level: 'unorganized' },
-    { word: 'example7', def: 'definition7', hanja: 'hanja7', level: 'good' },
-    { word: 'example8', def: 'definition8', hanja: 'hanja8', level: 'good' },
-    { word: 'example9', def: 'definition9', hanja: 'hanja9', level: 'unorganized' },
-    { word: 'example10', def: 'definition10', hanja: 'hanja10', level: 'bad' },
-    // Add more entries as needed
-    ];
+const ProgressBar = ({ data }) => { 
 
   // Initialize counters for each level
   let unorganizedCount = 0;
