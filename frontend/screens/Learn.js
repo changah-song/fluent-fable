@@ -20,14 +20,14 @@
 import { Text, View } from 'react-native'
 import React , { useState, useEffect } from 'react'
 import ActivityChecker from '../components/Learn/ActivityChecker';
+import ProgressBar from '../components/Learn/ProgressBar';
 
 const Learn = () => {
 
     return (
         <View>
-            <ActivityChecker/>
-            <Text>Flashchard section</Text>
-            
+            <ActivityChecker />
+            <ProgressBar />
         </View>
     )
 
