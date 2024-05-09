@@ -3,7 +3,6 @@
 ## Todo:
 
 - flashcard section
-    - UI first 🟨
     - logic behind it (anki, red, yellow, green...)
 
 - modal
@@ -25,6 +24,10 @@
 
 ## Done
 
+- basic flashcard setup :) stacking Flashcard component works and cool font used ✅
+    - UI and Animation ✅
+        - **_learned how to use PanResponder and Animated for nice animation_**
+
 - HANJA CONNECTION !! make the dictionary top section more detailed ✅
     - currently, the website API is not working.. need to know if it's blocked 
         - nah was just Unicode encoding issue
@@ -33,6 +36,7 @@
     - modal hanja clickable to keep digging into unknown hanjas ✅
     - modal popup looks sleeek ✅
     - modal popup when hanja is pressed ✅
+    - **_learned how to better use the Modal component_**
 
 - papago and google switching properly ✅
 - change toggle from switch to sliding touchableopacity ✅
@@ -53,7 +57,7 @@
     - and translated sentence to ""
 
 - made the transNotDict useState hook more global by using Contexts. set up the context and used it according ✅
-    - **learned how to access a single useState variable globally by using Context, Provider, and UseContext :)**
+    - **_learned how to access a single useState variable globally by using Context, Provider, and UseContext :)_**
 
 - expand top section? when viewing connections, extensive def... ✅
     - should show other defs from the korean dictionary api if there is more space?
@@ -75,10 +79,10 @@
 - list all definitions from a list of words in dictionary section ✅
 
 - connected local fastapi server to frontend localhost (10.2.2.1 for android emulator) ✅
-    - **learned about connecting server and emulator/local machine (e.g. CORS)**
+    - **_learned about connecting server and emulator/local machine (e.g. CORS)_**
 
 - save icon should be connected to every word ✅
-    - **learned about importance of asynchrony in database operations (async/await/promise)**  
+    - **_learned about importance of asynchrony in database operations (async/await/promise)_**
 - delete entries from database ✅
     
 - KONLPY!! IMPLEMENT IT :) ✅
@@ -98,7 +102,7 @@
 - touch onPress isn't as reactive as desired... ✅
     - maybe change it to a touchableopacity ✅
     
-- **set up FastAPI** (but struggling to connect it with frontend...) ✅
+- **_set up FastAPI_** (but struggling to connect it with frontend...) ✅
 - figured out the KONLPY module and picked the best options (okt > kkma > ...) ✅
 
 - set up database using expo sqlite and adding and viewing data entries ✅
@@ -115,19 +119,26 @@
     - accurate highlighting for each word
 - rudimentary translator API that is very slow ✅
 
+- make the definition where the word is equal to the highlightedword to show in topsection before 'more' is pressed.
+
 ## Non-MVP Topics
 
-- if text is wrapped for the modal header definition, it should be positioned at the top as opposed to the middle when it is not wrapped. better visual :) 🟨
-- highlighting sentence when pressed again 🟨
-- make the definition where the word is equal to the highlightedword to show in topsection before 'more' is pressed.
+- modal
+    - if text is flex-wrapped for the modal header definition, it should be positioned at the top as opposed to the middle when it is not wrapped. better visual :) 🟨
+
+- highlight text
+    - highlighting sentence when pressed again 🟨
+
 - currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
     - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
     - 올라오다 doesn't translate because it doesn't have an english equivalent in dict...
     - I'm assuming that KKMA library can handle this better,, not high priority 🧨
+
 - web scraping and getting news ❓
 - home page with list of categories for readings that the user can choose ❓
 - loading indication when changing text.. 🟥
 - visualization would be fun: google: 'matplotlib data network graph'🟥
+
 --------
 
 PAST IDEA FOR AI PROMPTS
