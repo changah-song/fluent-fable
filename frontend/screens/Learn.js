@@ -62,6 +62,9 @@ const Learn = () => {
                 <Flashcard vocab={vocab} />
               )
             })}
+            <View style={{zIndex: -1, alignContent: 'center', justifyContent:'center'}}>
+              <Text style={{textAlign: 'center', marginTop: 100}}>No more cards...</Text>
+            </View>
         </View>
     )
 
