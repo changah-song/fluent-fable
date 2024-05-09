@@ -3,10 +3,13 @@
 ## Todo:
 
 - flashcard section
-    - logic behind it (anki, red, yellow, green...)
+    - swipe logic behind it (anki, red, yellow, green...)
+    - click to turn card and show def, etc.
+    - progress bar sync
 
 - modal
     - backspace should go to previous modal 🟥
+    - if text is flex-wrapped for the modal header definition, it should be positioned at the top as opposed to the middle when it is not wrapped. better visual :) 🟨
 
 - loading indication when translating and dictionary... 🟨
     - when a word is clicked, immeidately show loading (with gif?)
@@ -15,14 +18,17 @@
 - user login 🟥
 
 - highlighting sentence when pressed again (why is it so hard!! ahhhh) 🟥
-    - learned about UI styling :(( Text and View have some specific interactions
+    - **_learned about UI styling :(( Text and View have some specific interactions_**
         - Text inside Text makes it possible to wrap around well and connect
         - Text cannot have background color if it's not merely word inside
         - View has flexwrap, alignself, alignitems, etc.
     - need to figure out how to make it wrap (Text-Text) while also having color within... (which means we can't use Text).. but also (View-Text) doesn't seem to work.. it doesn't wrap properly (new line for each Text)..hmmm
     - consider removing distinction between modes. one press (dictionary), again press (translator) could be better.
+    - highlighting sentence when pressed again 🟨
 
 ## Done
+
+Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promise (async) | FastAPI
 
 - basic flashcard setup :) stacking Flashcard component works and cool font used ✅
     - UI and Animation ✅
@@ -122,12 +128,6 @@
 - make the definition where the word is equal to the highlightedword to show in topsection before 'more' is pressed.
 
 ## Non-MVP Topics
-
-- modal
-    - if text is flex-wrapped for the modal header definition, it should be positioned at the top as opposed to the middle when it is not wrapped. better visual :) 🟨
-
-- highlight text
-    - highlighting sentence when pressed again 🟨
 
 - currently, i'm using OKT library but it's not always accurate... e.g. 사롭잡다 -> 사로자다; 향하기 -> "향", "하다" -> incense... :( ❓
     - 챙겨간 -> 챙기다, 간 (noun) better would be 챙기다, -간 but needs more thought and logic
