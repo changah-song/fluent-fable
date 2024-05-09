@@ -1,14 +1,14 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
 
-const Flashcard = ({ data }) => {
+const Flashcard = ({ vocab }) => {
   const pan = useRef(new Animated.ValueXY()).current;
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onPanResponderMove: Animated.event(
       [null, { dx: pan.x }],
-      {useNativeDriver: false}
+      {useNativeDriver: false} 
       ),
     onPanResponderRelease: () => {
       const screenWidth = Dimensions.get('window').width;
@@ -30,19 +30,15 @@ const Flashcard = ({ data }) => {
 
   return (
     <View style={styles.container}>
-      {data.map((item, index) => (
-        <Animated.View
-          key={index}
-          style={[
-            styles.card,
-            { transform: [{ translateX: pan.x }, { translateY: pan.y }] },
-            { zIndex: data.length - index},
-          ]}
-          {...panResponder.panHandlers}
-        >
-          <Text>{item.word}</Text>
-        </Animated.View>
-      ))}
+      <Animated.View
+        style={[
+          styles.card,
+          { transform: [{ translateX: pan.x }, { translateY: pan.y }] }
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <Text>{vocab.word}</Text>
+      </Animated.View>
     </View>
   );
 };
@@ -55,11 +51,12 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    top: 200,
+    position: 'absolute',
+    top: 10,
     borderWidth: 1,
     backgroundColor: 'white',
     width: '96%',
-    height: 100,
+    height: 560,
     borderRadius: 4
   },
 });

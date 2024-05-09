@@ -50,13 +50,18 @@ const Learn = () => {
       }, [])
     );
 
-    console.log("current words in list:", words);
+    console.log("current words in list:", words.slice(1));
 
     return (
         <View>
             <ActivityChecker />
             <ProgressBar data={words.slice(1)} />
-            <Flashcard data={words.slice(1)} />
+            {words.slice(1).map((vocab, _) => {
+              console.log('flashcard word: ', vocab);
+              return (
+                <Flashcard vocab={vocab} />
+              )
+            })}
         </View>
     )
 

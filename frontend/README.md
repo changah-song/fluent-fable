@@ -2,6 +2,10 @@
 
 ## Todo:
 
+- flashcard section
+    - UI first 🟨
+    - logic behind it (anki, red, yellow, green...)
+
 - modal
     - backspace should go to previous modal 🟥
 
@@ -10,10 +14,6 @@
     - cache stuff for less api calls and smoother feel
 
 - user login 🟥
-
-- flashcard section
-    - UI first 🟨
-    - logic behind it (anki, red, yellow, green...)
 
 - highlighting sentence when pressed again (why is it so hard!! ahhhh) 🟥
     - learned about UI styling :(( Text and View have some specific interactions
