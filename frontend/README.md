@@ -2,13 +2,14 @@
 
 ## Todo:
 
-- font importing is buggy sometimes, it takes time? and it has minor error
+Bugs:
+    - need to reload the learn tab to update progressbar :(
+    - font importing is buggy sometimes, it takes time? and it has minor error
+    - more cards don't show up when new words are saved sometimes
 
 - flashcard section
-    - swipe logic behind it (anki, red, yellow, green...) 🟨
     - progress bar sync 🟨
     - hanja information 🟩
-    - more cards don't show up when new words are saved..
 
 - modal
     - backspace should go to previous modal 🟥
@@ -36,7 +37,8 @@ Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promis
 - basic flashcard setup :) stacking Flashcard component works and cool font used ✅
     - UI and Animation ✅
     - flip and swipe implemented ✅
-        - **_learned how to use PanResponder and Animated for nice animation_**
+    - swipe logic behind it (anki, red, yellow, green...) ✅
+    - **_learned how to use PanResponder and Animated for nice animation_**
 
 - HANJA CONNECTION !! make the dictionary top section more detailed ✅
     - currently, the website API is not working.. need to know if it's blocked 
