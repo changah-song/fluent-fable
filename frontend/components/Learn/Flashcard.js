@@ -1,15 +1,25 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
+import { NotoSerifKR_400Regular } from '@expo-google-fonts/noto-serif-kr';
+import { useFonts } from 'expo-font'
 
 const Flashcard = ({ vocab }) => {
+  // initialize Font
+  let [fontsLoaded] = useFonts({NotoSerifKR_400Regular});
+
+  // initialize Animated object
   const pan = useRef(new Animated.ValueXY()).current;
 
+  // create instance for PanResponder that handles actions
   const panResponder = PanResponder.create({
+    // when touched
     onStartShouldSetPanResponder: () => true,
+    // when moving: only change the x-axis AKA horizontal movement
     onPanResponderMove: Animated.event(
       [null, { dx: pan.x }],
       {useNativeDriver: false} 
       ),
+    // when released: if it's a certain value off screen, it keeps going and swipes it away
     onPanResponderRelease: () => {
       const screenWidth = Dimensions.get('window').width;
       const threshold = 0.7 * screenWidth;
@@ -37,7 +47,7 @@ const Flashcard = ({ vocab }) => {
         ]}
         {...panResponder.panHandlers}
       >
-        <Text>{vocab.word}</Text>
+        <Text style={styles.text}>{vocab.word}</Text>
       </Animated.View>
     </View>
   );
@@ -59,6 +69,14 @@ const styles = StyleSheet.create({
     height: 560,
     borderRadius: 4
   },
+
+  text: {
+    textAlign: 'center',
+    marginTop: '50%', 
+    fontFamily: 'NotoSerifKR_400Regular',
+    fontSize: Dimensions.get('window').width * 0.08
+  }
+
 });
 
 export default Flashcard;
