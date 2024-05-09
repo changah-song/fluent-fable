@@ -4,26 +4,35 @@ import { NotoSerifKR_400Regular } from '@expo-google-fonts/noto-serif-kr';
 import { useFonts } from 'expo-font'
 
 const Flashcard = ({ vocab }) => {
+  // load font
   let [fontsLoaded] = useFonts({NotoSerifKR_400Regular});
+  // state variable to keep track of if the card is flipped or not
   const [isFlipped, setIsFlipped] = useState(false);
+  // initialize flip animation
   const [flipAnimation] = useState(new Animated.Value(0));
+  // initialize pan resopnder for gesture input tracking
   const pan = useRef(new Animated.ValueXY()).current;
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
+    // allows only for horizontal swipes
     onPanResponderMove: Animated.event(
       [null, { dx: pan.x }],
       { useNativeDriver: false }
     ),
+    // when finger is released (handles both tap and swipe)
     onPanResponderRelease: (e, gestureState) => {
       if (Math.abs(gestureState.dx) < 10 && Math.abs(gestureState.dy) < 10) {
-        // It's a click
+        // tap: if press and release is very short, it's a tap
         flipCard();
       } else {
-        // It's a swipe
+        // swipe: otherwise, it's a swipe
         const screenWidth = Dimensions.get('window').width;
+        // threshold for how much off screen the card needs to be before it swipes completely
         const threshold = 0.7 * screenWidth;
+        // save the dx value of the swipe
         const dx = gestureState.dx;
+        // conditional for what happens for big and small swipe
         if (dx > threshold || dx < -threshold) {
           Animated.spring(
             pan,
@@ -33,6 +42,7 @@ const Flashcard = ({ vocab }) => {
             flipCard();
           });
         } else {
+          // repositions itself
           Animated.spring(
             pan,
             { toValue: { x: 0, y: 0 }, useNativeDriver: false }
@@ -42,15 +52,18 @@ const Flashcard = ({ vocab }) => {
     }
   });
 
+  // what happens when card is tapped
   const flipCard = () => {
     setIsFlipped(!isFlipped);
+    // change rotateX value from 0 - 180 over 0.5 seconds
     Animated.timing(flipAnimation, {
       toValue: isFlipped ? 0 : 180,
       duration: 500,
       useNativeDriver: false,
     }).start();
   };
-
+  
+  // helpful variables for interpolation and styling of objects
   const frontInterpolate = flipAnimation.interpolate({
     inputRange: [0, 180],
     outputRange: ['0deg', '180deg'],
@@ -72,17 +85,21 @@ const Flashcard = ({ vocab }) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={flipCard}>
+        {/* frontside of flashcard */}
         <Animated.View
           style={[styles.card, frontAnimatedStyle]}
           {...panResponder.panHandlers}
         >
           <Text style={[styles.text, {fontFamily: 'NotoSerifKR_400Regular'}]}>{vocab.word}</Text>
         </Animated.View>
+        
+        {/* backside of flashcard */}
         <Animated.View
           style={[styles.card, styles.flipCardBack, backAnimatedStyle]}
           {...panResponder.panHandlers}
         >
-          <Text style={styles.text}>{vocab.hanja}</Text>
+          <Text style={styles.text}>{vocab.def}</Text>
+          <Text>{vocab.hanja}</Text>
         </Animated.View>
       </TouchableOpacity>
     </View>
