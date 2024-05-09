@@ -3,9 +3,9 @@
 ## Todo:
 
 - flashcard section
-    - swipe logic behind it (anki, red, yellow, green...)
-    - click to turn card and show def, etc.
-    - progress bar sync
+    - swipe logic behind it (anki, red, yellow, green...) 🟨
+    - progress bar sync 🟨
+    - hanja information 🟩
 
 - modal
     - backspace should go to previous modal 🟥
@@ -32,6 +32,7 @@ Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promis
 
 - basic flashcard setup :) stacking Flashcard component works and cool font used ✅
     - UI and Animation ✅
+    - flip and swipe implemented ✅
         - **_learned how to use PanResponder and Animated for nice animation_**
 
 - HANJA CONNECTION !! make the dictionary top section more detailed ✅
