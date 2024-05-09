@@ -47,12 +47,12 @@ export const insertData = (word, hanja, definition, level) => {
   });
 };
 
-export const updateLevel = (word, hanja, definition, level) => {
+export const updateLevel = (word, hanja, definition, newLevel) => {
   return new Promise((resolve, reject) => {
     db.transaction(tx => {
       tx.executeSql(
         'UPDATE vocab SET level = ? WHERE word = ? AND hanja = ? AND def = ?',
-        [word, hanja, definition, level],
+        [newLevel, word, hanja, definition],
         () => {
           console.log('Level updated successfully!');
           resolve();
