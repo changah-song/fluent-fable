@@ -2,8 +2,9 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
 import { NotoSerifKR_400Regular } from '@expo-google-fonts/noto-serif-kr';
 import { useFonts } from 'expo-font'
+import { updateLevel } from '../Database';
 
-const Flashcard = ({ vocab }) => {
+const Flashcard = ({ vocab, onSwipe }) => {
   // load font
   let [fontsLoaded] = useFonts({NotoSerifKR_400Regular});
   // state variable to keep track of if the card is flipped or not
@@ -38,9 +39,13 @@ const Flashcard = ({ vocab }) => {
             pan,
             { toValue: { x: dx > 0 ? screenWidth : -screenWidth, y: 0 }, useNativeDriver: false }
           ).start(() => {
-
-            
-
+            if (dx > threshold) {
+              // swiped right
+              swipeRight();
+            } else if (dx <- threshold) {
+              // swiped left
+              swipeLeft();
+            }
             setIsFlipped(!isFlipped);
             flipCard();
           });
@@ -54,6 +59,71 @@ const Flashcard = ({ vocab }) => {
       }
     }
   });
+
+  const swipeRight = async () => {
+    onSwipe();
+    // Run function when swiped right
+    if (vocab.level === "unorganized") {
+      try {
+        await updateLevel(vocab.word, vocab.hanja, vocab.def, "good");
+        console.log('Level updated successfully from "unorganized" to "good!');
+      } catch (error) {
+        console.error('Error updating level:', error);
+        return; // Stop execution if there's an error
+      }
+    } else if (vocab.level === "mid") {
+      try {
+        await updateLevel(vocab.word, vocab.hanja, vocab.def, "good");
+        console.log('Level updated successfully from "mid" to "good"!');
+      } catch (error) {
+        console.error('Error updating level:', error);
+        return; // Stop execution if there's an error
+      }
+    } else if (vocab.level === "bad") {
+      try {
+        await updateLevel(vocab.word, vocab.hanja, vocab.def, "mid");
+        console.log('Level updated successfully from "bad" to "mid"!');
+      } catch (error) {
+        console.error('Error updating level:', error);
+        return; // Stop execution if there's an error
+      }
+    } else if (vocab.level === "good") {
+      console.log('Level is already "good", no update needed.');
+    }
+  };
+
+  const swipeLeft = async () => {
+    onSwipe();
+    // Run function when swiped left
+    if (vocab.level === "unorganized") {
+      try {
+        await updateLevel(vocab.word, vocab.hanja, vocab.def, "bad");
+        console.log('Level updated successfully from "unorganized" to "bad"!');
+      } catch (error) {
+        console.error('Error updating level:', error);
+        return; // Stop execution if there's an error
+      }
+    } else if (vocab.level === "mid") {
+      try {
+        await updateLevel(vocab.word, vocab.hanja, vocab.def, "bad");
+        console.log('Level updated successfully from "mid" to "bad"!');
+      } catch (error) {
+        console.error('Error updating level:', error);
+        return; // Stop execution if there's an error
+      }
+    } else if (vocab.level === "good") {
+      try {
+        await updateLevel(vocab.word, vocab.hanja, vocab.def, "mid");
+        console.log('Level updated successfully from "good" to "mid"!');
+      } catch (error) {
+        console.error('Error updating level:', error);
+        return; // Stop execution if there's an error
+      }
+    } else if (vocab.level === "bad") {
+      console.log('Level is already "bad", no update needed.');
+  }
+};
+
 
   // what happens when card is tapped
   const flipCard = () => {

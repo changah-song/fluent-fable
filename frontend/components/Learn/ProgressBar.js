@@ -1,35 +1,34 @@
 import React from 'react';
 import { Text, View, StyleSheet } from 'react-native';
 
-const ProgressBar = ({ data }) => { 
+const ProgressBar = ({ data, progress }) => { 
+    // Initialize counters for each level
+    let unorganizedCount = 0;
+    let badCount = 0;
+    let midCount = 0;
+    let goodCount = 0;
 
-  // Initialize counters for each level
-  let unorganizedCount = 0;
-  let badCount = 0;
-  let midCount = 0;
-  let goodCount = 0;
+    // Total count of items
+    const totalCount = data.length;
 
-  // Total count of items
-  const totalCount = data.length;
-
-  // Calculate counts for each level
-  data.forEach(item => {
-    switch (item.level) {
-      case 'unorganized':
-        unorganizedCount++;
-        break;
-      case 'bad':
-        badCount++;
-        break;
-      case 'mid':
-        midCount++;
-        break;
-      case 'good':
-        goodCount++;
-        break;
-      default:
-        break;
-    }
+    // Calculate counts for each level
+    data.forEach(item => {
+        switch (item.level) {
+        case 'unorganized':
+            unorganizedCount++;
+            break;
+        case 'bad':
+            badCount++;
+            break;
+        case 'mid':
+            midCount++;
+            break;
+        case 'good':
+            goodCount++;
+            break;
+        default:
+            break;
+        }
   });
 
   // Calculate percentages

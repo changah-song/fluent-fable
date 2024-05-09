@@ -2,10 +2,13 @@
 
 ## Todo:
 
+- font importing is buggy sometimes, it takes time? and it has minor error
+
 - flashcard section
     - swipe logic behind it (anki, red, yellow, green...) 🟨
     - progress bar sync 🟨
     - hanja information 🟩
+    - more cards don't show up when new words are saved..
 
 - modal
     - backspace should go to previous modal 🟥
