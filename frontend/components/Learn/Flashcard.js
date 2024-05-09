@@ -1,54 +1,67 @@
-import { Text, View } from 'react-native'
-import React , { useState, useEffect } from 'react'
-import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
 
-import { viewData } from '../Database';
+const Flashcard = ({ data }) => {
+  const pan = useRef(new Animated.ValueXY()).current;
 
-
-const Flashcard = () => {
-  const [words, setWords] = useState([]);
-  console.log()
-  const fetchWords = () => {
-    viewData()
-      .then(data => {
-        setWords(data);
-      })
-      .catch(error => {
-        console.error('Error fetching data:', error);
-      });
-  };
-  useEffect(() => {
-    fetchWords();
-  }, []);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchWords(); // Fetch data whenever screen is focused
-    }, [])
-  );
-
-  const [result, setResult] = useState('');
-  const [result2, setResult2] = useState('');
-
-  const showWords = () => {
-    return words.map((word, index) => {
-      return (
-        <View key={index}>
-          {word.word && <Text>Word: {word.word}</Text>}
-          {word.def && <Text>Definition: {word.def}</Text>}
-          {word.hanja && <Text>Hanja: {word.hanja}</Text>}
-          {word.level && <Text>Korean Level: {word.level}</Text>}
-          <Text>-------------</Text>
-        </View>
-      )
-    })
-  }
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderMove: Animated.event(
+      [null, { dx: pan.x }],
+      {useNativeDriver: false}
+      ),
+    onPanResponderRelease: () => {
+      const screenWidth = Dimensions.get('window').width;
+      const threshold = 0.7 * screenWidth;
+      const dx = pan.x._value; // Access the current x-value from the Animated.Value
+      if (dx > threshold || dx < -threshold) {
+        Animated.spring(
+          pan,
+          { toValue: { x: dx > 0 ? screenWidth : -screenWidth, y: 0 }, useNativeDriver: false }
+        ).start();
+      } else {
+        Animated.spring(
+          pan,
+          { toValue: { x: 0, y: 0 }, useNativeDriver: false }
+        ).start();
+      }
+    }
+  });
 
   return (
-    <View>
-      {showWords()}
+    <View style={styles.container}>
+      {data.map((item, index) => (
+        <Animated.View
+          key={index}
+          style={[
+            styles.card,
+            { transform: [{ translateX: pan.x }, { translateY: pan.y }] },
+            { zIndex: data.length - index},
+          ]}
+          {...panResponder.panHandlers}
+        >
+          <Text>{item.word}</Text>
+        </Animated.View>
+      ))}
     </View>
-  )
-};  
+  );
+};
 
-export default Flashcard
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  card: {
+    top: 200,
+    borderWidth: 1,
+    backgroundColor: 'white',
+    width: '96%',
+    height: 100,
+    borderRadius: 4
+  },
+});
+
+export default Flashcard;

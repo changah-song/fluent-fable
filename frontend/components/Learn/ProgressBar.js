@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     borderWidth: 1,
     borderRadius: 10,
-    overflow: 'hidden' // makes sure parent is on top
+    overflow: 'hidden' // makes sure parent is on top for border radius
   },
   bar: {
     alignItems: 'center'

@@ -17,15 +17,19 @@
     //        show yellow after 3 days
     //        show red after 1 day
 
-import { Text, View } from 'react-native'
 import React , { useState, useEffect } from 'react'
+import { Text, View } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+
 import ActivityChecker from '../components/Learn/ActivityChecker';
 import ProgressBar from '../components/Learn/ProgressBar';
-import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import Flashcard from '../components/Learn/Flashcard';
 
 import { viewData } from '../components/Database';
 
 const Learn = () => {
+
+    // load in Data from database
     const [words, setWords] = useState([]);
     const fetchWords = () => {
       viewData()
@@ -51,7 +55,8 @@ const Learn = () => {
     return (
         <View>
             <ActivityChecker />
-            <ProgressBar data={words.slice(1)}/>
+            <ProgressBar data={words.slice(1)} />
+            <Flashcard data={words.slice(1)} />
         </View>
     )
 
