@@ -38,6 +38,9 @@ const Flashcard = ({ vocab }) => {
             pan,
             { toValue: { x: dx > 0 ? screenWidth : -screenWidth, y: 0 }, useNativeDriver: false }
           ).start(() => {
+
+            
+
             setIsFlipped(!isFlipped);
             flipCard();
           });
@@ -115,7 +118,7 @@ const styles = StyleSheet.create({
   card: {
     top: 10,
     borderWidth: 0.5,
-    width: 370,
+    width: 380,
     height: 570,
     borderRadius: 2,
     alignItems: 'center',
