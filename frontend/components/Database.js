@@ -35,17 +35,36 @@ export const insertData = (word, hanja, definition, level) => {
         'INSERT INTO vocab (word, hanja, def, level) VALUES (?, ?, ?, ?)',
         [word, hanja, definition, level],
         () => {
-            console.log('Data inserted successfully!');
-            resolve();
+          console.log('Data inserted successfully!');
+          resolve();
         },
         (_, error) => {
-            console.error('Error inserting data:', error);
-            reject(error);
+          console.error('Error inserting data:', error);
+          reject(error);
         }
       );
     });
   });
 };
+
+export const updateLevel = (word, hanja, definition, level) => {
+  return new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        'UPDATE vocab SET level = ? WHERE word = ? AND hanja = ? AND def = ?',
+        [word, hanja, definition, level],
+        () => {
+          console.log('Level updated successfully!');
+          resolve();
+        },
+        (_, error) => {
+          console.log('Error updating level:', error);
+          reject(error);
+        }
+      )
+    })
+  })
+}
 
 export const removeData = (word, hanja, definition) => {
   return new Promise((resolve, reject) => {
