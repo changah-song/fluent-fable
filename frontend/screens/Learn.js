@@ -28,7 +28,7 @@ import Flashcard from '../components/Learn/Flashcard';
 import { viewData } from '../components/Database';
 
 const Learn = () => {
-
+    const [todaySwiped, setTodaySwiped] = useState(0);
     // load in Data from database
     const [words, setWords] = useState([]);
     const fetchWords = () => {
@@ -40,9 +40,10 @@ const Learn = () => {
           console.error('Error fetching data:', error);
         });
     };
+
     useEffect(() => {
       fetchWords();
-    }, []);
+    }, [todaySwiped]);
   
     useFocusEffect(
       React.useCallback(() => {
@@ -58,7 +59,7 @@ const Learn = () => {
             <ProgressBar data={words.slice(1)} />
             {words.slice(1).map((vocab, index) => {
               return (
-                <Flashcard vocab={vocab} />
+                <Flashcard vocab={vocab} todaySwiped={todaySwiped} setTodaySwiped={setTodaySwiped}/>
               )
             })}
             <View style={{zIndex: -1, alignContent: 'center', justifyContent:'center'}}>

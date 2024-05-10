@@ -4,7 +4,7 @@ import { NotoSerifKR_400Regular } from '@expo-google-fonts/noto-serif-kr';
 import { useFonts } from 'expo-font'
 import { updateLevel } from '../Database';
 
-const Flashcard = ({ vocab }) => {
+const Flashcard = ({ vocab, setTodaySwiped }) => {
   // load font
   let [fontsLoaded] = useFonts({NotoSerifKR_400Regular});
   // state variable to keep track of if the card is flipped or not
@@ -61,6 +61,7 @@ const Flashcard = ({ vocab }) => {
   });
 
   const swipeRight = async () => {
+    setTodaySwiped(prevCount => prevCount + 1);
     // Run function when swiped right
     if (vocab.level === "unorganized") {
       try {
@@ -92,6 +93,7 @@ const Flashcard = ({ vocab }) => {
   };
 
   const swipeLeft = async () => {
+    setTodaySwiped(prevCount => prevCount + 1);
     // Run function when swiped left
     if (vocab.level === "unorganized") {
       try {
