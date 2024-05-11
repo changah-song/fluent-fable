@@ -169,13 +169,14 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
           style={[styles.card, styles.flipCardBack, backAnimatedStyle]}
           {...panResponder.panHandlers}
         >
-          <Text style={styles.text}>{vocab.def}</Text>
-          <Text>{vocab.hanja}</Text>
+          <Text style={styles.text}>
+            {vocab.def}
+          </Text>
 
-          <View styles={styles.hanjaContainer}>
+          <View style={styles.hanjaContainer}>
             {vocab.hanja.split('').map((word, index) => {
               return (
-                <View key={index}>
+                <View key={index} style={styles.individualHanja}>
                   <Hanja hanja={word} />
                 </View>
               )
@@ -207,26 +208,31 @@ const styles = StyleSheet.create({
     paddingBottom: 200
   },
   text: {
-    textAlign: 'center',
-    marginTop: '50%',
-    fontSize: 30
+    position: 'absolute',
+    fontSize: 30,
+    top: 30
   },
   flipCardBack: {
     position: 'absolute',
     top: 10,
   },
+
   hanjaContainer: {
+    flex: 1,
+    flexDirection: 'row',
     position: 'absolute',
     width: "90%",
-    height: "65%",
-    top: 220,
-    backgroundColor: 'white', 
-    padding: 10,
+    height: "110%",
+    top: 120,
+    borderWidth: 0.5,
+    padding: 5,
     borderRadius: 10,
+    justifyContent: 'space-between'
+  },
 
-    justifyContent: 'center',
-    alignItems: 'center'
-},
+  individualHanja: {
+    flex: 1,
+  }
 });
 
 export default Flashcard;

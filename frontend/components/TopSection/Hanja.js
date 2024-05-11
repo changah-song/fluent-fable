@@ -5,13 +5,13 @@ const Hanja = ({ hanja }) => {
     const { firstTableData: title, similarWordsTableData: result } = hanjaRelated({ query: hanja })
 
     return (
-        <View>
+        <View style={{ flexDirection: 'column' }}>
             <View style={styles.headerContainer}>
                 <Text style={styles.headerHanja}>{hanja}</Text>
-                <ScrollView style={styles.headerMeaning}>
+                <ScrollView horizontal style={styles.headerMeaning}>
                 {title.map((word, index) => {
                     return (
-                        <Text key={index} style={{fontWeight: 'bold'}}>{word.meaning} </Text>
+                        <Text key={index} style={{fontSize: 10, fontWeight: 'bold'}}>{word.meaning} </Text>
                     )
                 })}
                 </ScrollView>
@@ -20,16 +20,17 @@ const Hanja = ({ hanja }) => {
                 {result.map((word, index) => {
                     return (
                         <View key={index} style={styles.bodyView}>
-                            <Text>{word.korean} ( </Text>
-                            {word.hanja.split('').map((newHanja, index) => {
-                                return(
-                                    <View key={index}>
-                                        <Text>{newHanja}</Text>
-                                        <Text style={{fontSize:5}}></Text>
-                                    </View>
+                            <Text style={styles.text}>{word.korean}</Text>
+                            <Text style={styles.text}>
+                                (
+                                {word.hanja.split('').map((newHanja, index) => {
+                                    return(
+                                        <Text key={index} style={styles.text}>{newHanja}</Text>
+                                    )
+                                })}
                                 )
-                            })}
-                            <Text> ) {word.meaning}</Text>
+                            </Text>
+                            <Text style={styles.text}> {word.meaning}</Text>
                         </View>
                     )
                 })}
@@ -39,11 +40,13 @@ const Hanja = ({ hanja }) => {
 }
 
 const styles = StyleSheet.create({
-    headerContainer: {flex: 1, flexWrap: 'wrap', flexDirection: 'row', width:'100%'},
-    headerHanja: {flex: 0.13, fontSize: 30, marginLeft: 7, marginTop: 2},
-    headerMeaning: {flex: 0.87, height: '80%', marginTop: 7},
-    bodyContainer: {height: '80%', top: 0, left: 0},
+    headerContainer: { flexDirection: 'row' },
+    headerHanja: { fontSize: 15, marginLeft: 1},
+    headerMeaning: { marginLeft: 2, marginTop: 3},
+
+    bodyContainer: { height: '90%' },
     bodyView: { flexDirection: 'row', flexWrap: 'wrap' },
+    text: { fontSize: 10 }
 });
 
 export default Hanja

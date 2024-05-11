@@ -59,7 +59,9 @@ const Learn = () => {
             <ProgressBar data={words.slice(1)} />
             {words.slice(1).map((vocab, index) => {
               return (
-                <Flashcard vocab={vocab} todaySwiped={todaySwiped} setTodaySwiped={setTodaySwiped}/>
+                <View key={index}>
+                  <Flashcard vocab={vocab} todaySwiped={todaySwiped} setTodaySwiped={setTodaySwiped}/>
+                </View>
               )
             })}
             <View style={{zIndex: -1, alignContent: 'center', justifyContent:'center'}}>

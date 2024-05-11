@@ -32,6 +32,7 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                                     return (
                                         <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                                             <Text>{word.korean} ( </Text>
+
                                             {word.hanja.split('').map((newHanja, index) => {
                                                 return(
                                                     <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
@@ -40,6 +41,7 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                                                     </TouchableOpacity>
                                                 )
                                             })}
+                                            
                                             <Text> ) {word.meaning}</Text>
                                         </View>
                                     )
