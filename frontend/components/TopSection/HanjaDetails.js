@@ -30,19 +30,20 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                             <ScrollView style={{height: '80%', top: 0, left: 0}}>
                                 {result.map((word, index) => {
                                     return (
-                                        <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                            <Text>{word.korean} ( </Text>
-
-                                            {word.hanja.split('').map((newHanja, index) => {
-                                                return(
-                                                    <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
-                                                        <Text>{newHanja}</Text>
-                                                        <Text style={{fontSize:5}}></Text>
-                                                    </TouchableOpacity>
+                                        <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                                            <Text style={styles.text}>{word.korean} </Text>
+                                            <Text> 
+                                                (
+                                                {word.hanja.split('').map((newHanja, index) => {
+                                                    return(
+                                                        <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
+                                                            <Text style={{fontSize: 11}}>{newHanja}</Text>
+                                                        </TouchableOpacity>
+                                                    )
+                                                })}
                                                 )
-                                            })}
-                                            
-                                            <Text> ) {word.meaning}</Text>
+                                            </Text>
+                                            <Text style={styles.text}> {word.meaning}</Text>
                                         </View>
                                     )
                                 })}
@@ -85,6 +86,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    text: {
     }
 });
 
