@@ -6,10 +6,14 @@ Bugs:
     - need to reload the learn tab to update progressbar :(
     - font importing is buggy sometimes, it takes time? and it has minor error
     - more cards don't show up when new words are saved sometimes
+    - check all unnecessary stuff
+        - rerenders (progress bar, learn.js, etc.)
+        - storage
+        - useEffect/useStates
 
 - flashcard section
-    - progress bar sync 🟨
     - hanja information 🟩
+    - check for hanja character before Hanja Details 🟨
 
 - modal
     - backspace should go to previous modal 🟥
@@ -33,6 +37,8 @@ Bugs:
 ## Done
 
 Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promise (async) | FastAPI
+
+- progress bar and flashcard swipe action is in sync now ✅
 
 - basic flashcard setup :) stacking Flashcard component works and cool font used ✅
     - UI and Animation ✅

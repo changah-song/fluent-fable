@@ -1,12 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
-import { NotoSerifKR_400Regular } from '@expo-google-fonts/noto-serif-kr';
-import { useFonts } from 'expo-font'
 import { updateLevel } from '../Database';
+import Hanja from '../TopSection/Hanja';
 
 const Flashcard = ({ vocab, setTodaySwiped }) => {
   // load font
-  let [fontsLoaded] = useFonts({NotoSerifKR_400Regular});
   // state variable to keep track of if the card is flipped or not
   const [isFlipped, setIsFlipped] = useState(false);
   // initialize flip animation
@@ -163,7 +161,7 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
           style={[styles.card, frontAnimatedStyle]}
           {...panResponder.panHandlers}
         >
-          <Text style={[styles.text, {fontFamily: 'NotoSerifKR_400Regular'}]}>{vocab.word}</Text>
+          <Text style={[styles.text]}>{vocab.word}</Text>
         </Animated.View>
         
         {/* backside of flashcard */}
@@ -173,6 +171,17 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
         >
           <Text style={styles.text}>{vocab.def}</Text>
           <Text>{vocab.hanja}</Text>
+
+          <View styles={styles.hanjaContainer}>
+            {vocab.hanja.split('').map((word, index) => {
+              return (
+                <View key={index}>
+                  <Hanja hanja={word} />
+                </View>
+              )
+            })}
+          </View>
+
         </Animated.View>
       </TouchableOpacity>
     </View>
@@ -206,6 +215,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
   },
+  hanjaContainer: {
+    position: 'absolute',
+    width: "90%",
+    height: "65%",
+    top: 220,
+    backgroundColor: 'white', 
+    padding: 10,
+    borderRadius: 10,
+
+    justifyContent: 'center',
+    alignItems: 'center'
+},
 });
 
 export default Flashcard;
