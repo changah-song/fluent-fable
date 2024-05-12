@@ -3,7 +3,8 @@ import hanjaRelated from "../api/hanjaRelated"
 
 const Hanja = ({ hanja }) => {
     const { firstTableData: title, similarWordsTableData: result } = hanjaRelated({ query: hanja })
-
+    console.log('called hanja again...');
+    console.log('----');
     return (
         <View style={{ flexDirection: 'column' }}>
             <View style={styles.headerContainer}>
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     headerHanja: { fontSize: 15, marginLeft: 1},
     headerMeaning: { marginLeft: 2, marginTop: 3},
 
-    bodyContainer: { height: '90%' },
+    bodyContainer: { height: '95%' },
     bodyView: { flexDirection: 'row', flexWrap: 'wrap' },
     text: { fontSize: 10 }
 });

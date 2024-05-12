@@ -161,7 +161,7 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
           style={[styles.card, frontAnimatedStyle]}
           {...panResponder.panHandlers}
         >
-          <Text style={[styles.text]}>{vocab.word}</Text>
+          <Text style={[styles.frontText]}>{vocab.word}</Text>
         </Animated.View>
         
         {/* backside of flashcard */}
@@ -169,16 +169,22 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
           style={[styles.card, styles.flipCardBack, backAnimatedStyle]}
           {...panResponder.panHandlers}
         >
-          <Text style={styles.text}>
-            {vocab.def}
-          </Text>
+          <Text style={styles.backText}>{vocab.def}</Text>
+          <Text style={styles.origin}>{vocab.hanja}</Text>
 
           <View style={styles.hanjaContainer}>
             {vocab.hanja.split('').map((word, index) => {
               return (
+                
+                /[\u4e00-\u9fff]+/.test(word) 
+                ? 
                 <View key={index} style={styles.individualHanja}>
                   <Hanja hanja={word} />
                 </View>
+                :
+                <View key={index}></View>
+
+      
               )
             })}
           </View>
@@ -207,10 +213,21 @@ const styles = StyleSheet.create({
     backfaceVisibility: 'hidden',
     paddingBottom: 200
   },
-  text: {
+  frontText: {
     position: 'absolute',
-    fontSize: 30,
+    fontSize: 25,
+    top: 250,
+    fontFamily: 'serif'
+  },
+  backText: {
+    position: 'absolute',
+    fontSize: 25,
     top: 30
+  },
+  origin: {
+    position: 'absolute',
+    fontSize: 20,
+    top: 65
   },
   flipCardBack: {
     position: 'absolute',
