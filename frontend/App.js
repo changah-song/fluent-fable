@@ -1,15 +1,14 @@
 import Homescreen from './screens/Homescreen';
 import Read from './screens/Read';
 import Learn from './screens/Learn';
-
+import Epub from './screens/Epub';
 import { createTable, deleteAllDataFromTable, getTableSchema, insertData, viewData } from './components/Database';
-
 import { FontAwesome5 } from '@expo/vector-icons';
-
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TranslatorProvider } from 'react-native-translator';
+import { ReaderProvider } from '@epubjs-react-native/core';
 
 const Tab = createBottomTabNavigator();
 
@@ -30,6 +29,8 @@ export default function App() {
   }, []);
 
   return (
+    <ReaderProvider>
+
     <TranslatorProvider>
       <NavigationContainer>
         <Tab.Navigator 
@@ -46,8 +47,11 @@ export default function App() {
           })}>
           <Tab.Screen name="Read" component={Read} />
           <Tab.Screen name="Learn" component={Learn} />
+          <Tab.Screen name="Epub" component={Epub} />
         </Tab.Navigator>
       </NavigationContainer>
     </TranslatorProvider>
+    </ReaderProvider>
+
   );
 }

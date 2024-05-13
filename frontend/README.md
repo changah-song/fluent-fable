@@ -2,7 +2,7 @@
 
 ## Todo:
 
-Bugs:
+Bugs/Small Todos:
     - need to reload the learn tab to update progressbar :(
     - font importing is buggy sometimes, it takes time? and it has minor error
     - more cards don't show up when new words are saved sometimes
@@ -10,6 +10,7 @@ Bugs:
         - rerenders (progress bar, learn.js, etc.)
         - storage
         - useEffect/useStates
+    - find more efficient way to display hanja details for the reading and learning sections
 
 - modal
     - backspace should go to previous modal 🟥

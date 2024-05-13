@@ -184,7 +184,6 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
                 :
                 <View key={index}></View>
 
-      
               )
             })}
           </View>
