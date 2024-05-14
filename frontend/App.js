@@ -8,7 +8,6 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TranslatorProvider } from 'react-native-translator';
-import { ReaderProvider } from '@epubjs-react-native/core';
 
 const Tab = createBottomTabNavigator();
 
@@ -29,8 +28,6 @@ export default function App() {
   }, []);
 
   return (
-    <ReaderProvider>
-
     <TranslatorProvider>
       <NavigationContainer>
         <Tab.Navigator 
@@ -51,7 +48,5 @@ export default function App() {
         </Tab.Navigator>
       </NavigationContainer>
     </TranslatorProvider>
-    </ReaderProvider>
-
   );
 }
