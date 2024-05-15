@@ -3,9 +3,6 @@
 ## Todo:
 
 Bugs/Small Todos:
-    - need to reload the learn tab to update progressbar :(
-    - font importing is buggy sometimes, it takes time? and it has minor error
-    - more cards don't show up when new words are saved sometimes
     - check all unnecessary stuff
         - rerenders (progress bar, learn.js, etc.)
         - storage
@@ -34,6 +31,13 @@ Bugs/Small Todos:
 ## Done
 
 Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promise (async) | FastAPI
+
+- implemented Epub reader and ability to do everything as before with the text :) yay for compartmentalization ✅
+
+bug fixes: ✅
+    - need to reload the learn tab to update progressbar :(
+    - font importing is buggy sometimes, it takes time? and it has minor error
+    - more cards don't show up when new words are saved sometimes
 
 - progress bar and flashcard swipe action is in sync now ✅
 
