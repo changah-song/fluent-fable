@@ -34,7 +34,7 @@ export default function App() {
           screenOptions={({ route }) => ({
             tabBarIcon: ({ focused, color, size }) => {
               let iconName;
-              if (route.name === 'Read') {
+              if (route.name === 'Epub') {
                 iconName = 'book';
               } else if (route.name === 'Learn') {
                 iconName = 'graduation-cap';
@@ -42,9 +42,8 @@ export default function App() {
               return <FontAwesome5 name={iconName} size={size} color={color} />;
             },
           })}>
-          <Tab.Screen name="Read" component={Read} />
-          <Tab.Screen name="Learn" component={Learn} />
           <Tab.Screen name="Epub" component={Epub} />
+          <Tab.Screen name="Learn" component={Learn} />
         </Tab.Navigator>
       </NavigationContainer>
     </TranslatorProvider>

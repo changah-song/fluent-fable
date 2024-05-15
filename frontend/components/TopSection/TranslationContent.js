@@ -75,6 +75,7 @@ const styles = StyleSheet.create({
         height: 25,
     },
     translationSection: {
+        left: 5,
         position: 'absolute',
         width: '100%',         
     }
