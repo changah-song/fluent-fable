@@ -11,7 +11,7 @@ const ReadText = () => {
   return (
     <View style={styles.container}>
       <AppProvider>
-        <TopSection highlightedWord={highlightedWord} />
+        <TopSection style={styles.topSection} highlightedWord={highlightedWord} />
         <BottomSection text={text} setHighlightedWord={setHighlightedWord} />
       </AppProvider>
     </View>
@@ -24,7 +24,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: '10%',  // leave space for the top section
-  }
+  },
+  topSection: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '20%',
+    justifyContent: 'center',
+    alignItems: 'left',
+    padding: '3%',
+    backgroundColor: '#e0e0e0',
+    width: '100%',
+  },
 });
 
 export default ReadText;

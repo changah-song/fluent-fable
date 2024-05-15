@@ -52,7 +52,7 @@ const DictionaryContent = ({ highlightedWord }) => {
     };
 
     return (
-        <ScrollView style={{ marginTop: 30, marginLeft: 0 }}>
+        <ScrollView>
             {stemWordList.map((word, index) => (
                 <View key={index}>
                     {dictionaryData[index] && dictionaryData[index].length > 0 ? (
@@ -70,7 +70,7 @@ const DictionaryContent = ({ highlightedWord }) => {
 
                             <View style={styles.content}>
                                 <Text style={{ fontWeight: 'bold' }}>{word}</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={{ flexDirection: 'row' }}>
                                     <Text style={{ marginHorizontal: 5 }}>(</Text>
 
                                     {dictionaryData[index][0].origin.split('').map((hanja, index) => {

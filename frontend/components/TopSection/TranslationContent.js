@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Text, View, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useAppContext } from '../../contexts/AppContext';
 import Translator from 'react-native-translator';
-import { AntDesign } from '@expo/vector-icons';
 
 // Translator Component
 const TranslationContent = ({ highlightedWord }) => {
@@ -68,7 +67,8 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         borderColor: 'black', 
         padding: 2,
-        backgroundColor: 'lightgray'
+        backgroundColor: 'lightgray',
+        right: '30%',
     },
     image: {
         width: 25,

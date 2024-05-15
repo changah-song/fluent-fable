@@ -17,14 +17,14 @@ const TopSection = ({ highlightedWord }) => {
     };
 
     return (
-        <View style={styles.topSection}>
+        <View>
             {/* shows highlighted word, header */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ position: 'absolute', top:8, left:13, width: '85%' }}>
-                <Text style={{ fontSize: 18 }}>{highlightedWord}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.title}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{highlightedWord}</Text>
             </ScrollView>
             
             {/* toggle between translator and dictionary */}
-            <TouchableOpacity onPress={toggleContent} style={styles.lookup}>
+            <TouchableOpacity onPress={toggleContent} style={styles.toggleButton}>
                 {dictMode ? <MaterialIcons name="translate" size={25} color="black" /> : <Feather name="book-open" size={25} color="black" />}
             </TouchableOpacity>
 
@@ -32,32 +32,20 @@ const TopSection = ({ highlightedWord }) => {
             {dictMode ? 
             <DictionaryContent highlightedWord={highlightedWord}/> : 
             <TranslationContent highlightedWord={highlightedWord}/>}
-
         </View>
     );
   };
 
 const styles = StyleSheet.create({
-
-    topSection: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '20%',
-        justifyContent: 'center',
-        alignItems: 'left',
-        padding: '3%',
-        backgroundColor: '#e0e0e0',
-        width: '100%',
+    title: {
+        position: 'absolute', 
+        top: 2, 
+        left: 5, 
+        width: '85%',
     },
-    lookup: {
-        position: 'absolute', // Set position to absolute
-        top: 10, // Adjust top position as needed
-        right: 13, // Adjust right position as needed
-        borderRadius: 5, // Example border radius
-        justifyContent: 'center', // Center content vertically
-        alignItems: 'center', // Center content horizontally
+    toggleButton: {
+        left: 360,
+        top: 5
     }
 
 });
