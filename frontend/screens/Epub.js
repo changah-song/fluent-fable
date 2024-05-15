@@ -12,17 +12,6 @@ const Epub = () => {
         <SafeAreaView style={{ flex: 1 }}>
             
             <View>
-                <TouchableOpacity onPress={() => setSrc("https://s3.amazonaws.com/moby-dick/OPS/package.opf")}>
-                    <Text>Book (.opf)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => setSrc(epub)}>
-                    <Text>Book (.epub)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => setSrc(base64)}>
-                    <Text>Book (base64)</Text>
-                </TouchableOpacity>
 
                 <TouchableOpacity
                 onPress={() => {
@@ -48,7 +37,7 @@ const Epub = () => {
                     );
                 }}
                 >
-                <Text>Book (local)</Text>
+                <Text>Load local book...</Text>
                 </TouchableOpacity>
             </View>
             <ReaderProvider>
