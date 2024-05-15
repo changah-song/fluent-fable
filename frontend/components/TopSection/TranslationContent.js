@@ -41,7 +41,7 @@ const TranslationContent = ({ highlightedWord }) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ marginTop: 30, width:'80%' }}>
+            <ScrollView style={styles.translationSection}>
                 <Translator
                     from="ko"
                     to="en"
@@ -74,6 +74,10 @@ const styles = StyleSheet.create({
         width: 25,
         height: 25,
     },
+    translationSection: {
+        position: 'absolute',
+        width: '100%',         
+    }
 });
 
 export default TranslationContent

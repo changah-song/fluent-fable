@@ -42,7 +42,7 @@ const Epub = () => {
                     );
                 }}
                 >
-                <Text>Load local book...</Text>
+                <Text>    > Load local book...</Text>
                 </TouchableOpacity>
             </View>
             <View style={styles.topSection}>
