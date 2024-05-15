@@ -31,19 +31,19 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                                 {result.map((word, index) => {
                                     return (
                                         <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline' }}>
-                                            <Text style={styles.text}>{word.korean} </Text>
-                                            <Text> 
-                                                (
-                                                {word.hanja.split('').map((newHanja, index) => {
-                                                    return(
-                                                        <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
-                                                            <Text style={{fontSize: 11}}>{newHanja}</Text>
-                                                        </TouchableOpacity>
-                                                    )
-                                                })}
-                                                )
-                                            </Text>
-                                            <Text style={styles.text}> {word.meaning}</Text>
+                                            <Text style={styles.text}>{word.korean}</Text>
+                                            <View style={{flexDirection: 'row'}}>
+                                                <Text style={{marginHorizontal: 5}}>(</Text>
+                                                    {word.hanja.split('').map((newHanja, index) => {
+                                                        return(
+                                                            <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
+                                                                <Text>{newHanja}</Text>
+                                                            </TouchableOpacity>
+                                                        )
+                                                    })}
+                                                    <Text style={{marginHorizontal: 5}}>)</Text>
+                                                <Text style={styles.text}> {word.meaning}</Text>
+                                            </View>
                                         </View>
                                     )
                                 })}
