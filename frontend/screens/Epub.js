@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     },
     topSection: {
         flex: 0.2,
-        borderWidth: 1,
+        borderWidth: 0.5,
     },
     reader: {
         flex: 0.77,
