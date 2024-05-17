@@ -13,8 +13,10 @@ You can:
 Preview of current state:
 
 
+https://github.com/paul-song-minerva/fluent-fable/assets/97287057/f3252c24-f4be-49c4-9d21-38e911fe9904
 
-https://github.com/paul-song-minerva/fluent-fable/assets/97287057/da264fda-0b59-4d34-b12c-e213124e4ef7
+
+
 
 
 
