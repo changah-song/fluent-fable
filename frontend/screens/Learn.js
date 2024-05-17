@@ -24,6 +24,7 @@ import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEff
 import ActivityChecker from '../components/Learn/ActivityChecker';
 import ProgressBar from '../components/Learn/ProgressBar';
 import Flashcard from '../components/Learn/Flashcard';
+import Overview from '../components/Learn/Overview';
 
 import { viewData } from '../components/Database';
 
@@ -57,6 +58,9 @@ const Learn = () => {
         <View>
             <ActivityChecker />
             <ProgressBar data={words.slice(1)} />
+
+            <Overview />
+
             {words.slice(1).map((vocab, index) => {
               return (
                 <View key={index}>
