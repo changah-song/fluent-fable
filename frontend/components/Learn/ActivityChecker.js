@@ -41,10 +41,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   square: {
-    width: 20,
-    height: 20,
-    margin: 1,
-    borderRadius: 2,
+    width: 18,
+    height: 18,
+    margin: 2,
+    borderRadius: 1,
     borderColor: 'black',
     borderWidth: 1
   },

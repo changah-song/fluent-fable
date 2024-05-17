@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
         height: '100%'
     },
     toggleButton: {
-        left: 360,
+        left: 370,
         top: 5
     }
 

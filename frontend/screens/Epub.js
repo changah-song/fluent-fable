@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
         flex: 0.03,
     },
     topSection: {
-        flex: 0.2,
+        flex: 0.15,
         borderWidth: 0.5,
     },
     reader: {
-        flex: 0.77,
+        flex: 0.82,
     }
 });
 

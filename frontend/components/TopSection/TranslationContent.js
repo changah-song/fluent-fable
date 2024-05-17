@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
         padding: 2,
         backgroundColor: 'lightgray',
         right: '30%',
+        top: -40
     },
     image: {
         width: 25,

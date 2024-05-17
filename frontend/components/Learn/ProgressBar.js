@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     marginLeft: 10,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 5,
     overflow: 'hidden' // makes sure parent is on top for border radius
   },
   bar: {

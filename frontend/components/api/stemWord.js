@@ -7,9 +7,9 @@ const stemWord = ( {query} ) => {
   const [error, setError] = useState(null);
 
   // apparently 10.0.2.2 is the address for android emulator :(( took so much time
-  //const api_url = `http:/10.0.2.2:8000/okt_morphs`;
+  const api_url = `http:/10.0.2.2:8000/okt_morphs`;
 
-  const api_url = `http://192.168.200.121:8000/okt_morphs`;
+  // const api_url = `http://192.168.200.121:8000/okt_morphs`;
 
   const options = {
       method: 'get',
