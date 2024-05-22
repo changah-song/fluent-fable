@@ -2,6 +2,12 @@
 
 ## Todo:
 
+- implement keeping track of daily progress section
+- implement streaks using the global variable
+- add ability to view words when clicking on the level tabs
+- flesh out e-reader
+- sleeker style
+
 Bugs/Small Todos:
     - check all unnecessary stuff
         - rerenders (progress bar, learn.js, etc.)
