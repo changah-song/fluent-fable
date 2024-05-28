@@ -28,13 +28,13 @@ const TranslationContent = ({ highlightedWord }) => {
 
     return (
         <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', position: 'absolute', right: 0, top: 80 }}>
-                <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ opacity: service==='papago' ? 1 : 0.3 }}>
+            <View style={{ flexDirection: 'row', position: 'absolute', right: 0, top: 100 }}>
+                <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ zIndex:10, opacity: service==='papago' ? 1 : 0.3 }}>
                     <View style={[styles.imageContainer, { borderTopLeftRadius: 10, borderBottomLeftRadius: 10 }]}>
                         <Image source={require('../../assets/papagoicon.png')} style={styles.image} />
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ opacity: service==='google' ? 1 : 0.3 }}>
+                <TouchableOpacity onPress={handleTypeChange} activeOpacity={0.8} style={{ zIndex: 10, opacity: service==='google' ? 1 : 0.3 }}>
                     <View style={[styles.imageContainer, { borderTopRightRadius: 10, borderBottomRightRadius: 10 }]}>
                         <Image source={require('../../assets/googletranslateicon.png')} style={styles.image} />
                     </View>

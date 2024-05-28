@@ -20,7 +20,7 @@ const TopSection = ({ highlightedWord }) => {
         <View>
             {/* shows highlighted word, header */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.title}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{highlightedWord}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', fontFamily: 'serif' }}>{highlightedWord}</Text>
             </ScrollView>
             
             {/* toggle between translator and dictionary */}
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
         top: 2, 
         left: 5, 
         width: '85%',
-        height: '100%'
+        height: '20%',
     },
     toggleButton: {
         left: 370,

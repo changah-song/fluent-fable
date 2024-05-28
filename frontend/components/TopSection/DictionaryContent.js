@@ -86,7 +86,7 @@ const DictionaryContent = ({ highlightedWord }) => {
                                 </View>
                                 {dictionaryData[index].length > 1 ? (
                                     <TouchableOpacity onPress={() => toggleExpanded(word)}>
-                                        <Text style={{ color: 'blue', textDecorationLine: 'underline', marginLeft: 5}}>
+                                        <Text style={{ color: '#ebf4f6', textDecorationLine: 'underline', marginLeft: 5}}>
                                             {expandedWords.includes(word) ? 'less' : 'more'}
                                         </Text>
                                     </TouchableOpacity>
@@ -137,12 +137,11 @@ const DictionaryContent = ({ highlightedWord }) => {
 
 const styles = StyleSheet.create({
     save: {
-        position: 'absolute', // Set position to absolute
-        top: 3, // Adjust top position as needed
-        left: 5, // Adjust right position as needed
-        borderRadius: 5, // Example border radius
-        justifyContent: 'center', // Center content vertically
-        alignItems: 'center', // Center content horizontally
+        position: 'absolute', 
+        top: 3, 
+        left: 5, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
     },
     content: {
         left: 25,

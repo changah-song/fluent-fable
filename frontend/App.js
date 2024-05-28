@@ -4,7 +4,7 @@ import { Foundation } from '@expo/vector-icons';
 
 import Home from './screens/Home';
 import Learn from './screens/Learn';
-import Epub from './screens/Epub';
+import Read from './screens/Read';
 
 import { createTable, deleteAllDataFromTable, getTableSchema, insertData, viewData } from './components/Database';
 import React, { useEffect } from 'react';
@@ -41,7 +41,7 @@ export default function App() {
               let iconName;
               let IconComponent;
 
-              if (route.name === 'Epub') {
+              if (route.name === 'Read') {
                 iconName = "book-open";
                 IconComponent = FontAwesome6;
               } else if (route.name === 'Learn') {
@@ -64,7 +64,7 @@ export default function App() {
               const labelStyle = focused ? styles.labelFocused : styles.labelDefault;
               return (
                 <Text style={[labelStyle, {color: 'white', fontFamily: 'Roboto', fontSize: 12}]}>
-                  {route.name == 'Epub' ? 'Read' : route.name}
+                  {route.name}
                 </Text>
               )
             },
@@ -75,7 +75,7 @@ export default function App() {
 
           })}>
           <Tab.Screen name="Home" component={Home} />
-          <Tab.Screen name="Epub" component={Epub} />
+          <Tab.Screen name="Read" component={Read} />
           <Tab.Screen name="Learn" component={Learn} />
         </Tab.Navigator>
       </NavigationContainer>

@@ -57,6 +57,7 @@ const Learn = () => {
     return (
         <View>
           <View style={styles.progressSection}>
+            <Text style={styles.title}>Flashcards</Text>
             <ProgressBar data={words.slice(1)} />
             <Overview />
           </View>
@@ -75,7 +76,17 @@ const Learn = () => {
 const styles = StyleSheet.create({
   progressSection: {
     backgroundColor: '#6e7b8b',
-    marginBottom: 10
+    marginBottom: 10,
+    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 10
+  },
+  title: {
+    position: 'absolute',
+    top: 45,
+    left: 12,
+    fontSize: 25,
+    fontFamily: 'Roboto',
+    color: '#ebf4f6'
   }
 })
 
