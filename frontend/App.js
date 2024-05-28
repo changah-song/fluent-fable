@@ -1,10 +1,16 @@
+import { Entypo } from '@expo/vector-icons';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { Foundation } from '@expo/vector-icons';
+
 import Homescreen from './screens/Homescreen';
 import Read from './screens/Read';
 import Learn from './screens/Learn';
 import Epub from './screens/Epub';
+
 import { createTable, deleteAllDataFromTable, getTableSchema, insertData, viewData } from './components/Database';
-import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
+import { Text, View, StyleSheet } from 'react-native';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TranslatorProvider } from 'react-native-translator';
@@ -30,18 +36,41 @@ export default function App() {
   return (
     <TranslatorProvider>
       <NavigationContainer>
-        <Tab.Navigator 
+        <Tab.Navigator
           screenOptions={({ route }) => ({
             tabBarIcon: ({ focused, color, size }) => {
               let iconName;
+              let IconComponent;
+
               if (route.name === 'Epub') {
-                iconName = 'book';
+                iconName = "book-open";
+                IconComponent = FontAwesome6;
               } else if (route.name === 'Learn') {
-                iconName = 'graduation-cap';
+                iconName = "pencil";
+                IconComponent = Foundation;
+              } else if (route.name === 'Home') {
+                iconName = "home";
+                IconComponent = Entypo;
               }
-              return <FontAwesome5 name={iconName} size={size} color={color} />;
+              // Custom icon styles
+              const iconStyles = focused ? styles.iconFocused : styles.iconDefault;
+              const iconColor = focused ? '#f4a261' : color;
+              return (
+                <View style={[styles.iconContainer, iconStyles]}>
+                  <IconComponent name={iconName} color={iconColor} size={26} />
+                </View>
+              );
             },
+            tabBarLabel: ({ focused }) => {
+              const labelStyle = focused ? styles.labelFocused : styles.labelDefault;
+              return <Text style={[labelStyle, {color: 'white', fontFamily: 'Roboto', fontSize: 12}]}>{route.name}</Text>;
+            },
+            tabBarActiveTintColor: 'white',
+            tabBarInactiveTintColor: '#f1e8e2',
+            tabBarStyle: { backgroundColor: '#6e7b8b' },
+
           })}>
+          <Tab.Screen name="Home" component={Homescreen} />
           <Tab.Screen name="Epub" component={Epub} />
           <Tab.Screen name="Learn" component={Learn} />
         </Tab.Navigator>
@@ -49,3 +78,36 @@ export default function App() {
     </TranslatorProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  // styling for icons
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    top: 5
+  },
+  iconDefault: {
+    widht: 50,
+    height: 50,
+    borderRadius: 10,
+    padding: 5,
+  },
+  iconFocused: {
+    top: -15,
+    widht: 50,
+    height: 50,
+    padding: 10,
+    borderRadius: 25,
+    backgroundColor: 'white',
+  },
+  // styling for text
+  labelDefault: {
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  labelFocused: {
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 5, 
+  },
+});
