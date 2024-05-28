@@ -21,7 +21,7 @@ const Home = ({ setSrc, books, addBook }) => {
                         );
                     }}
                 >
-                    <Icon name="plus" size={20} color="##ebf4f6" />
+                    <Icon name="plus" size={20} color="#ebf4f6" />
                 </TouchableOpacity>
             </View>
             <FlatList
