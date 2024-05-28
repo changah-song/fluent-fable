@@ -41,16 +41,16 @@ const ProgressBar = ({ data }) => {
   return (
     <View>
       <View style={styles.container}>
-        <View style={[styles.bar, { width: `${unorganizedPercent}%`, backgroundColor: '#ccc' }]}>
+        <View style={[styles.bar, { width: `${unorganizedPercent}%`, backgroundColor: '#edc9af' }]}>
           <Text style={styles.text}>{`${unorganizedCount}`}</Text>
         </View>
-        <View style={[styles.bar, { width: `${badPercent}%`, backgroundColor: '#FF6363' }]}>
+        <View style={[styles.bar, { width: `${badPercent}%`, backgroundColor: '#f4a261' }]}>
           <Text style={styles.text}>{`${badCount}`}</Text>
         </View>
-        <View style={[styles.bar, { width: `${midPercent}%`, backgroundColor: '#FFCD63' }]}>
+        <View style={[styles.bar, { width: `${midPercent}%`, backgroundColor: '#ebf4f6' }]}>
             <Text style={styles.text}>{`${midCount}`}</Text>
         </View>
-        <View style={[styles.bar, { width: `${goodPercent}%`, backgroundColor: '#63FFA1' }]}>
+        <View style={[styles.bar, { width: `${goodPercent}%`, backgroundColor: '#99d3df' }]}>
             <Text style={styles.text}>{`${goodCount}`}</Text>
         </View>
       </View>
@@ -62,15 +62,19 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     height: 20,
+    marginTop: 100,
     marginBottom: 10,
     marginRight: 10,
     marginLeft: 10,
-    borderWidth: 1,
     borderRadius: 5,
-    overflow: 'hidden' // makes sure parent is on top for border radius
+    overflow: 'hidden', // makes sure parent is on top for border radius
+    backgroundColor: '#6e7b8b'
   },
   bar: {
     alignItems: 'center'
+  },
+  text: {
+    color: 'white'
   }
 });
 
