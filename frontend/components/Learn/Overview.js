@@ -3,17 +3,17 @@ import { Text, View, StyleSheet } from 'react-native';
 const Overview = () => {
     return (
         <View style={styles.container}>
-            <View style={{alignItems: 'center', borderWidth: 1, borderRadius: 2, margin: 2, marginBottom: 5}}>
+            <View style={{backgroundColor: '#edc9af', alignItems: 'center', borderRadius: 5, margin: 2, marginBottom: 5}}>
                 <Text>unorganized</Text>
             </View>
             <View style={styles.slots}>
-                <View style={styles.section}>
+                <View style={[styles.section, {backgroundColor: '#99d3df'}]}>
                     <Text>good</Text>
                 </View>
-                <View style={styles.section}>
+                <View style={[styles.section, {backgroundColor: '#ebf4f6'}]}>
                     <Text>mid</Text>
                 </View>
-                <View style={styles.section}>
+                <View style={[styles.section, {backgroundColor: '#f4a261'}]}>
                     <Text>bad</Text>
             </View>
             </View>
@@ -23,9 +23,10 @@ const Overview = () => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'pink',
         width: '95%',
-        alignSelf: 'center'
+        alignSelf: 'center',
+        marginTop: 5,
+        marginBottom: 20
     },
     slots: {
         flexDirection: 'row',
@@ -33,7 +34,6 @@ const styles = StyleSheet.create({
     }, 
     section: {
         width: '32%',
-        borderWidth: 1,
         borderRadius: 5,
         margin: 2,
         alignItems: 'center'

@@ -2,8 +2,7 @@ import { Entypo } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Foundation } from '@expo/vector-icons';
 
-import Homescreen from './screens/Homescreen';
-import Read from './screens/Read';
+import Home from './screens/Home';
 import Learn from './screens/Learn';
 import Epub from './screens/Epub';
 
@@ -63,14 +62,19 @@ export default function App() {
             },
             tabBarLabel: ({ focused }) => {
               const labelStyle = focused ? styles.labelFocused : styles.labelDefault;
-              return <Text style={[labelStyle, {color: 'white', fontFamily: 'Roboto', fontSize: 12}]}>{route.name}</Text>;
+              return (
+                <Text style={[labelStyle, {color: 'white', fontFamily: 'Roboto', fontSize: 12}]}>
+                  {route.name == 'Epub' ? 'Read' : route.name}
+                </Text>
+              )
             },
+            headerShown: false,
             tabBarActiveTintColor: 'white',
             tabBarInactiveTintColor: '#f1e8e2',
             tabBarStyle: { backgroundColor: '#6e7b8b' },
 
           })}>
-          <Tab.Screen name="Home" component={Homescreen} />
+          <Tab.Screen name="Home" component={Home} />
           <Tab.Screen name="Epub" component={Epub} />
           <Tab.Screen name="Learn" component={Learn} />
         </Tab.Navigator>
@@ -98,7 +102,7 @@ const styles = StyleSheet.create({
     height: 50,
     padding: 10,
     borderRadius: 25,
-    backgroundColor: 'white',
+    backgroundColor: '#ebf4f6',
   },
   // styling for text
   labelDefault: {

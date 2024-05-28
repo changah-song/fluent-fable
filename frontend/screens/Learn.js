@@ -18,7 +18,7 @@
     //        show red after 1 day
 
 import React , { useState, useEffect } from 'react'
-import { Text, View } from 'react-native'
+import { Text, View, StyleSheet } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
 
 import ActivityChecker from '../components/Learn/ActivityChecker';
@@ -56,11 +56,10 @@ const Learn = () => {
 
     return (
         <View>
-            <ActivityChecker />
+          <View style={styles.progressSection}>
             <ProgressBar data={words.slice(1)} />
-
             <Overview />
-
+          </View>
             {words.slice(1).map((vocab, index) => {
               return (
                 <View key={index}>
@@ -68,12 +67,17 @@ const Learn = () => {
                 </View>
               )
             })}
-            <View style={{zIndex: -1, alignContent: 'center', justifyContent:'center'}}>
-              <Text style={{textAlign: 'center', marginTop: 100}}>No more cards...</Text>
-            </View>
         </View>
     )
 
 };  
+
+const styles = StyleSheet.create({
+  progressSection: {
+    backgroundColor: '#6e7b8b',
+    marginBottom: 10
+  }
+})
+
 
 export default Learn
