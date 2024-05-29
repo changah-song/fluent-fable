@@ -4,36 +4,49 @@ import { Text, View, Image, FlatList, Alert, TouchableOpacity, StyleSheet } from
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useFileSystem } from '@epubjs-react-native/expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
+import { ScrollView } from 'react-native-gesture-handler';
 
-const Home = ({ setCurrentBook }) => {
+const Home = ({ currentBook, setCurrentBook }) => {
     const [books, setBooks] = useState([]);
     return (
         <ReaderProvider>
-            <HandleBooks books={books} setBooks={setBooks} setCurrentBook={setCurrentBook}/>
-        </ReaderProvider>
+            <HandleBooks books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>
+        </ReaderProvider> 
     )
 }
 
-const HandleBooks = ({ books, setBooks, setCurrentBook }) => {
+const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
     const { getMeta } = useReader();
 
     const addBook = async () => {
         try {
-            const { title, author, cover } = await getMeta();
             const { assets } = await DocumentPicker.getDocumentAsync({copyToCacheDirectory: true});
             if (!assets) return;
             const { uri } = assets[0];
-            if (uri) {
-                setBooks([...books, { uri, title, author, cover }]);
-            }
-            console.log("it works!!", { uri, title, author });
+            setCurrentBook(uri);
         } catch (error) {
-            console.log("Error fetching metadata:", error);
+            console.log("Error picking document:", error);
         }
     };
 
+    useEffect(() => {
+        const fetchMeta = async () => {
+            if (currentBook) {
+                try {
+                    const { title, author, cover } = await getMeta();
+                    setBooks(prevBooks => [...prevBooks, { uri: currentBook, title, author, cover }]);
+                } catch (error) {
+                    console.log("Error fetching metadata:", error);
+                }
+            }
+        };
+
+        fetchMeta();
+    }, [currentBook]);
+
     return(
         <View>
+
             <View style={styles.loadBook}>
                 <TouchableOpacity
                     style={styles.addButton}
@@ -53,29 +66,23 @@ const HandleBooks = ({ books, setBooks, setCurrentBook }) => {
                     <Icon name="plus" size={20} color="#ebf4f6" />
                 </TouchableOpacity>
             </View>
-
+            
+            <Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader>
+            
             <FlatList
+                scrollEnabled
                 style={styles.bookList}
                 data={books}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <TouchableOpacity onPress={() => setCurrentBook(item.uri)}>
-                        <Text>{item.uri.split('/').pop()}</Text>
+                        <Text>Title: {item.title}</Text>
+                        <Text>Author: {item.author}</Text>
+                        <Image style={styles.image} source={item.cover ? { uri: item.cover } : require('../assets/favicon.png')} />
                     </TouchableOpacity>
                 )}
             />
-
-            <View style={styles.text}>
-                {books.map((value, index) => (
-                    <View key={index}>
-                        <Text>Title: {value.title}</Text>
-                        <Text>Author: {value.author}</Text>
-                        <Image style={styles.image} source={{uri: value.cover}}/>
-                    </View>
-                ))}
-            </View>
-
-            <Reader src={"file:///data/user/0/host.exp.exponent/cache/DocumentPicker/7bf7acef-c5eb-4741-933b-16e8a91147cb.epub"} fileSystem={useFileSystem}></Reader>
+            
         </View>
     );
 }
@@ -97,7 +104,7 @@ const styles = StyleSheet.create({
     },
     bookList: {
         position: 'absolute',
-        top: 200,
+        top: 50,
     },
     image: {
         width: 50,

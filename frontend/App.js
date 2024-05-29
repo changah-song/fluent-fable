@@ -77,7 +77,7 @@ export default function App() {
 
 			})}>
 			<Tab.Screen name="Home" >
-				{props => <Home {...props} setCurrentBook={setCurrentBook}/>}
+				{props => <Home {...props} currentBook={currentBook} setCurrentBook={setCurrentBook}/>}
 			</Tab.Screen>
 			<Tab.Screen name="Read" >
 				{props => <Read {...props} currentBook={currentBook} />}
