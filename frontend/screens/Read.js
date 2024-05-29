@@ -7,7 +7,7 @@ import { useFileSystem } from '@epubjs-react-native/expo-file-system';
 import TopSection from '../components/TopSection';
 import { AppProvider } from '../contexts/AppContext';
 
-const Read = ({ src }) => {
+const Read = ({ currentBook }) => {
     const [highlightedWord, setHighlightedWord] = useState('');
 
     return (
@@ -23,7 +23,7 @@ const Read = ({ src }) => {
             <View style={styles.reader}>
                 <ReaderProvider>
                     <Reader
-                        src={src}
+                        src={currentBook}
                         fileSystem={useFileSystem}
                         enableSelection={true}
                         onSelected={(text) => { setHighlightedWord(text) }}

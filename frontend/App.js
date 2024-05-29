@@ -13,25 +13,11 @@ import { Text, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TranslatorProvider } from 'react-native-translator';
-import * as DocumentPicker from 'expo-document-picker';
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
-	const [src, setSrc] = useState('');
-	const [books, setBooks] = useState([]);
-
-	const addBook = async () => {
-		const { assets } = await DocumentPicker.getDocumentAsync({
-			copyToCacheDirectory: true,
-		});
-		if (!assets) return;
-
-		const { uri } = assets[0];
-		if (uri) {
-			setBooks([...books, { id: books.length.toString(), uri }]);
-		}
-	};
+	const [currentBook, setCurrentBook] = useState(null);
 
 	useEffect(() => {
 		createTable()
@@ -91,10 +77,10 @@ export default function App() {
 
 			})}>
 			<Tab.Screen name="Home" >
-				{props => <Home {...props} books={books} addBook={addBook} src={src} setSrc={setSrc} />}
+				{props => <Home {...props} setCurrentBook={setCurrentBook}/>}
 			</Tab.Screen>
 			<Tab.Screen name="Read" >
-				{props => <Read {...props} src={src} />}
+				{props => <Read {...props} currentBook={currentBook} />}
 			</Tab.Screen>
 			<Tab.Screen name="Learn" component={Learn} />
 			</Tab.Navigator>

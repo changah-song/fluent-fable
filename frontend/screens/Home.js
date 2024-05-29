@@ -3,85 +3,84 @@ import { useEffect, useState } from 'react';
 import { Text, View, Image, FlatList, Alert, TouchableOpacity, StyleSheet } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useFileSystem } from '@epubjs-react-native/expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 
-const Home = ({ src, setSrc, books, addBook }) => {
-    const [metaData, setMetaData] = useState([]);
-
+const Home = ({ setCurrentBook }) => {
+    const [books, setBooks] = useState([]);
     return (
         <ReaderProvider>
-            <View style={styles.entireTop}>
-                <View style={styles.loadBook}>
-                    <TouchableOpacity
-                        style={styles.addButton}
-                        onPress={() => {
-                            Alert.alert(
-                                'Instructions',
-                                'To make this work, copy the books (.epub) located on your computer and paste in the emulator',
-                                [
-                                    {
-                                        text: 'Ok',
-                                        onPress: addBook,
-                                    },
-                                ]
-                            );
-                        }}
-                    >
-                        <Icon name="plus" size={20} color="#ebf4f6" />
-                    </TouchableOpacity>
-                </View>
-
-                <FlatList
-                    style={{top: 50}}
-                    data={books}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity onPress={() => setSrc(item.uri)}>
-                            <Text>{item.uri.split('/').pop()}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
-                <View style={{height: 0}}>
-                    {src && <BookInfo src={src} metaData={metaData} setMetaData={setMetaData} />}
-                </View>
-                
-                {}
-                
-            </View>
+            <HandleBooks books={books} setBooks={setBooks} setCurrentBook={setCurrentBook}/>
         </ReaderProvider>
     )
 }
 
-const BookInfo = ({src, metaData, setMetaData}) => {
+const HandleBooks = ({ books, setBooks, setCurrentBook }) => {
     const { getMeta } = useReader();
 
-    useEffect(() => {
-        // Function to log metadata
-        const logMetadata = async () => {
-            try {
-                console.log('Attempting to fetch metadata...');
-                const metadata = await getMeta();                
-                setMetaData([...metaData, [metadata.cover, metadata.title, metadata.author]])
-            } catch (error) {
-                console.error('Error fetching metadata:', error);
+    const addBook = async () => {
+        try {
+            const { title, author, cover } = await getMeta();
+            const { assets } = await DocumentPicker.getDocumentAsync({copyToCacheDirectory: true});
+            if (!assets) return;
+            const { uri } = assets[0];
+            if (uri) {
+                setBooks([...books, { uri, title, author, cover }]);
             }
-        };
-
-        // Call the function to log metadata
-        logMetadata();
-    }, [src, getMeta]);
+            console.log("it works!!", { uri, title, author });
+        } catch (error) {
+            console.log("Error fetching metadata:", error);
+        }
+    };
 
     return(
-        <Reader src={src} fileSystem={useFileSystem}></Reader>
+        <View>
+            <View style={styles.loadBook}>
+                <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => {
+                        Alert.alert(
+                            'Instructions',
+                            'To make this work, copy the books (.epub) located on your computer and paste in the emulator',
+                            [
+                                {
+                                    text: 'Ok',
+                                    onPress: addBook,
+                                },
+                            ]
+                        );
+                    }}
+                >
+                    <Icon name="plus" size={20} color="#ebf4f6" />
+                </TouchableOpacity>
+            </View>
+
+            <FlatList
+                style={styles.bookList}
+                data={books}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <TouchableOpacity onPress={() => setCurrentBook(item.uri)}>
+                        <Text>{item.uri.split('/').pop()}</Text>
+                    </TouchableOpacity>
+                )}
+            />
+
+            <View style={styles.text}>
+                {books.map((value, index) => (
+                    <View key={index}>
+                        <Text>Title: {value.title}</Text>
+                        <Text>Author: {value.author}</Text>
+                        <Image style={styles.image} source={{uri: value.cover}}/>
+                    </View>
+                ))}
+            </View>
+
+            <Reader src={"file:///data/user/0/host.exp.exponent/cache/DocumentPicker/7bf7acef-c5eb-4741-933b-16e8a91147cb.epub"} fileSystem={useFileSystem}></Reader>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    entireTop: {
-        flex: 0.18,
-        backgroundColor: '#85929E',
-        borderBottomRightRadius: 5,
-        borderBottomLeftRadius: 5
-    },
     loadBook: {
         backgroundColor: '#ebf4f6'
     },
@@ -96,6 +95,19 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    bookList: {
+        position: 'absolute',
+        top: 200,
+    },
+    image: {
+        width: 50,
+        height: 80,
+        borderWidth: 1, 
+    },
+    text: {
+        position: 'absolute',
+        top: 400,
+    }
 });
 
 export default Home
