@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     height: 50,
     padding: 10,
     borderRadius: 25,
-    backgroundColor: '#ebf4f6',
+    backgroundColor: 'white',
   },
   // styling for text
   labelDefault: {

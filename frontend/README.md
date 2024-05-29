@@ -2,6 +2,9 @@
 
 ## Todo:
 
+- book synchronization not working properly...
+- book doesn't remember page it was on last when new book is selected
+- bookmark that actually covers parts of the page would be cool
 - implement keeping track of daily progress section
 - implement streaks using the global variable
 - add ability to view words when clicking on the level tabs
