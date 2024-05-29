@@ -70,6 +70,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             <Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader>
 
             <FlatList
+                showsVerticalScrollIndicator={true}
                 style={styles.bookList}
                 data={books}
                 keyExtractor={(item) => item.id}
@@ -105,6 +106,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 50,
         height: 750,
+        width: 410
     },
     image: {
         width: 50,
