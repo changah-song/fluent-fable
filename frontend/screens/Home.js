@@ -9,9 +9,16 @@ import { ScrollView } from 'react-native-gesture-handler';
 const Home = ({ currentBook, setCurrentBook }) => {
     const [books, setBooks] = useState([]);
     return (
-        <ReaderProvider>
-            <HandleBooks books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>
-        </ReaderProvider> 
+        <View>
+            <View style={styles.header}>
+                <Text style={styles.title}>Books</Text>
+            </View>
+            <View style={styles.body}>
+            <ReaderProvider>
+                <HandleBooks books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>
+            </ReaderProvider> 
+            </View>
+        </View>
     )
 }
 
@@ -46,76 +53,101 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
 
     return(
         <View>
-
-            <View style={styles.loadBook}>
-                <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={() => {
-                        Alert.alert(
-                            'Instructions',
-                            'To make this work, copy the books (.epub) located on your computer and paste in the emulator',
-                            [
-                                {
-                                    text: 'Ok',
-                                    onPress: addBook,
-                                },
-                            ]
-                        );
-                    }}
-                >
-                    <Icon name="plus" size={20} color="#ebf4f6" />
-                </TouchableOpacity>
-            </View>
-            
-            <Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader>
-
+            <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                    Alert.alert(
+                        'Instructions',
+                        'To make this work, copy the books (.epub) located on your computer and paste in the emulator',
+                        [
+                            {
+                                text: 'Ok',
+                                onPress: addBook,
+                            },
+                        ]
+                    );
+                }}
+            >
+                <Icon name="plus" size={20} color="#ebf4f6" />
+            </TouchableOpacity>
+        
             <FlatList
                 showsVerticalScrollIndicator={true}
-                style={styles.bookList}
+                style={styles.bookContainer}
                 data={books}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <TouchableOpacity onPress={() => setCurrentBook(item.uri)}>
-                        <Text>Title: {item.title}</Text>
-                        <Text>Author: {item.author}</Text>
-                        <Image style={styles.image} source={item.cover ? { uri: item.cover } : require('../assets/favicon.png')} />
+                    <TouchableOpacity style={styles.book} onPress={() => setCurrentBook(item.uri)}>
+                        <Image style={styles.bookImage} source={item.cover ? { uri: item.cover } : require('../assets/favicon.png')} />
+
+                        <View style={styles.bookInfo}>
+                            <Text style={styles.bookTitle}>{item.title}</Text>
+                            <Text style={styles.bookAuthor}>{item.author}</Text>
+                        </View>
                     </TouchableOpacity>
                 )}
             />
+
+            <View style={{height:0}}><Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader></View>
 
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    loadBook: {
-        backgroundColor: '#ebf4f6'
-    },
+    header: {
+        height: "12%",
+        backgroundColor: '#6e7b8b',
+    }, 
+    title: {
+        position: 'absolute',
+        top: 45,
+        left: 12,
+        fontSize: 25,
+        fontFamily: 'Roboto',
+        color: '#ebf4f6'
+    }, 
+    body: {
+        height: "88%",
+    },  
     addButton: {
         position: 'absolute',
-        top: 730,
-        right: 20,
+        top: 640,
+        right: 30,
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: '#f4a261',
+        backgroundColor: '#f4a261',     
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 5
     },
-    bookList: {
-        position: 'absolute',
-        top: 50,
+    bookContainer: {
         height: 750,
-        width: 410
+        width: "100%",
     },
-    image: {
-        width: 50,
-        height: 80,
-        borderWidth: 1, 
+    book: {
+        padding: 5,
+        margin: 5,
+        borderWidth: 1,
+        height: 130,
+        flexDirection: 'row',
     },
-    text: {
-        position: 'absolute',
-        top: 400,
+    bookImage: {
+        width: "20%",
+        height: "100%",
+        borderWidth: 1,
+    },
+    bookInfo: {
+        marginLeft: 8,
+        width: "77%",
+        flexWrap: 'wrap',
+        flexDirection: 'row'
+    },
+    bookTitle: {
+        fontWeight: 'bold'
+    },
+    bookAuthor: {
     }
 });
 
