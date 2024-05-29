@@ -3,14 +3,14 @@ import { Text, View, StyleSheet } from 'react-native';
 const Overview = () => {
     return (
         <View style={styles.container}>
-            <View style={{backgroundColor: '#edc9af', alignItems: 'center', borderRadius: 5, margin: 2, marginBottom: 5}}>
+            <View style={{backgroundColor: '#ebf4f6', alignItems: 'center', borderRadius: 5, margin: 2, marginBottom: 5}}>
                 <Text>unorganized</Text>
             </View>
             <View style={styles.slots}>
                 <View style={[styles.section, {backgroundColor: '#99d3df'}]}>
                     <Text>good</Text>
                 </View>
-                <View style={[styles.section, {backgroundColor: '#ebf4f6'}]}>
+                <View style={[styles.section, {backgroundColor: '#edc9af'}]}>
                     <Text>mid</Text>
                 </View>
                 <View style={[styles.section, {backgroundColor: '#f4a261'}]}>

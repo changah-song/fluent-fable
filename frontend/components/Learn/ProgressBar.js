@@ -41,13 +41,13 @@ const ProgressBar = ({ data }) => {
   return (
     <View>
       <View style={styles.container}>
-        <View style={[styles.bar, { width: `${unorganizedPercent}%`, backgroundColor: '#edc9af' }]}>
+        <View style={[styles.bar, { width: `${unorganizedPercent}%`, backgroundColor: '#ebf4f6' }]}>
           <Text style={styles.text}>{`${unorganizedCount}`}</Text>
         </View>
         <View style={[styles.bar, { width: `${badPercent}%`, backgroundColor: '#f4a261' }]}>
           <Text style={styles.text}>{`${badCount}`}</Text>
         </View>
-        <View style={[styles.bar, { width: `${midPercent}%`, backgroundColor: '#ebf4f6' }]}>
+        <View style={[styles.bar, { width: `${midPercent}%`, backgroundColor: '#edc9af' }]}>
             <Text style={styles.text}>{`${midCount}`}</Text>
         </View>
         <View style={[styles.bar, { width: `${goodPercent}%`, backgroundColor: '#99d3df' }]}>
