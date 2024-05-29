@@ -12,12 +12,7 @@ You can:
 
 Preview of current state:
 
-
-https://github.com/paul-song-minerva/fluent-fable/assets/97287057/f3252c24-f4be-49c4-9d21-38e911fe9904
-
-
-
-
+![fluent-fable-viz](https://github.com/paul-song-minerva/fluent-fable/assets/97287057/a256abba-2087-451b-b1ba-2321aed8454a)
 
 
 If you have any questions, comments, or suggestions, please email me at paulsong00@uni.minerva.edu :))
