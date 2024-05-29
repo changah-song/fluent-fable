@@ -125,19 +125,15 @@ const styles = StyleSheet.create({
     bookContainer: {
         height: 750,
         width: "100%",
-        backgroundColor: '#053359'
+        backgroundColor: '#38596e'
     },
     book: {
         padding: 5,
         margin: 5,
         height: 150,
         flexDirection: 'row',
-        backgroundColor: '#38596e',
+        backgroundColor: 'white',
         borderRadius: 5,
-        borderTopColor: '#051039',
-        borderBottomColor: '#051039',
-        borderTopWidth: 5,
-        borderBottomWidth: 5
     },
     bookImage: {
         width: "25%",
