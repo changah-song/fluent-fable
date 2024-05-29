@@ -68,9 +68,8 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             </View>
             
             <Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader>
-            
+
             <FlatList
-                scrollEnabled
                 style={styles.bookList}
                 data={books}
                 keyExtractor={(item) => item.id}
@@ -82,7 +81,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                     </TouchableOpacity>
                 )}
             />
-            
+
         </View>
     );
 }
@@ -105,6 +104,7 @@ const styles = StyleSheet.create({
     bookList: {
         position: 'absolute',
         top: 50,
+        height: 750,
     },
     image: {
         width: 50,
