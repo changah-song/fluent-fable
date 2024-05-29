@@ -81,7 +81,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                         <Image style={styles.bookImage} source={item.cover ? { uri: item.cover } : require('../assets/favicon.png')} />
 
                         <View style={styles.bookInfo}>
-                            <Text style={styles.bookTitle}>{item.title}</Text>
+                            <View style={{flexWrap: 'wrap', flexDirection: 'row'}}><Text style={styles.bookTitle}>{item.title}</Text></View>
                             <Text style={styles.bookAuthor}>{item.author}</Text>
                         </View>
                     </TouchableOpacity>
@@ -125,26 +125,32 @@ const styles = StyleSheet.create({
     bookContainer: {
         height: 750,
         width: "100%",
+        backgroundColor: '#053359'
     },
     book: {
         padding: 5,
         margin: 5,
-        borderWidth: 1,
-        height: 130,
+        height: 150,
         flexDirection: 'row',
+        backgroundColor: '#38596e',
+        borderRadius: 5,
+        borderTopColor: '#051039',
+        borderBottomColor: '#051039',
+        borderTopWidth: 5,
+        borderBottomWidth: 5
     },
     bookImage: {
-        width: "20%",
+        width: "25%",
         height: "100%",
-        borderWidth: 1,
     },
     bookInfo: {
         marginLeft: 8,
-        width: "77%",
+        width: "73%",
         flexWrap: 'wrap',
-        flexDirection: 'row'
+        flexDirection: 'col',
     },
     bookTitle: {
+        fontSize: 18,
         fontWeight: 'bold'
     },
     bookAuthor: {
