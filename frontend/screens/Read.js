@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ebf4f6'
     },
     topSection: {
-        height: '86%',
+        height: '50%',
     },
     reader: {
         flex: 0.82,

@@ -136,6 +136,7 @@ const DictionaryContent = ({ highlightedWord }) => {
 };
 
 const styles = StyleSheet.create({
+
     save: {
         position: 'absolute', 
         top: 3, 

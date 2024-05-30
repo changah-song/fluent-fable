@@ -69,16 +69,16 @@ const styles = StyleSheet.create({
         padding: 2,
         backgroundColor: 'lightgray',
         right: '30%',
-        top: -40
+        top: -60
     },
     image: {
-        width: 25,
-        height: 25,
+        width: 20,
+        height: 20,
     },
     translationSection: {
         left: 5,
         position: 'absolute',
-        width: '100%',         
+        width: '85%',         
     }
 });
 

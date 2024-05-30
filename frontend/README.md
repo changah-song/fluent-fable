@@ -2,6 +2,8 @@
 
 ## Todo:
 
+- highglighteed word doesn't go away when book is changed, make it reset under specified conditions
+- when highlighting word not found in dictionary it keeps saying Loading...
 - book synchronization not working properly...
 - book doesn't remember page it was on last when new book is selected
 - bookmark that actually covers parts of the page would be cool
