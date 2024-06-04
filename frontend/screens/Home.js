@@ -27,14 +27,18 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
 
     const addBook = async () => {
         try {
-            setLoading(true);  
+            console.log("step 1")
             const { assets } = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+            console.log("2. just picked a book", {assets})
             if (!assets) return;
             const { uri } = assets[0];
             setCurrentBook(uri);
+            console.log("3. finished updating current book uri", {uri})
     
             // Fetch metadata immediately after setting the current book
+            console.log("4. before getting meta info")
             const { title, author, cover } = await getMeta();
+            console.log("5. after getting meta info", {title})
 
              // Check if the book already exists in the books array
             const bookExists = books.some(book => book.title === title && book.author === author && book.cover === cover);
@@ -43,11 +47,12 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                 return;
             }
             // Add the book to the books array if it doesn't already exist
+            console.log("6. before adding book to array")
             setBooks(prevBooks => [...prevBooks, { id: Math.random(), uri, title, author, cover }]);
+            console.log("7. after adding book to array", {author} )
+
         } catch (error) {
             console.log("Error in addBook:", error);
-        } finally {
-            setLoading(false);  // Set loading to false after the async operation
         }
     };
 
@@ -74,7 +79,16 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                         [
                             {
                                 text: 'Ok',
-                                onPress: addBook,
+                                onPress: async () => {
+                                    setLoading(true); // Set loading to true before the async operation
+                                    try {
+                                        await addBook(); // Wait for addBook to complete
+                                        setLoading(false); // Set loading to false after the async operation
+                                    } catch (error) {
+                                        setLoading(false); // Set loading to false if there is an error
+                                        console.error(error); // Handle the error as needed
+                                    }
+                                },
                             },
                             {
                                 text: 'Cancel',
@@ -87,15 +101,16 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                 <Icon name="plus" size={20} color="#ebf4f6" />
             </TouchableOpacity>
 
-            {loading ? (
-                <Text>Loading...</Text>  // Display loading indicator
-            ) : (
-                <FlatList
-                    showsVerticalScrollIndicator={true}
-                    style={styles.bookContainer}
-                    data={books}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
+
+            <FlatList
+                showsVerticalScrollIndicator={true}
+                style={styles.bookContainer}
+                data={books}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    loading ? (
+                        <Text>loading...</Text> 
+                    ) : (
                         <TouchableOpacity style={styles.book} onPress={() => handlePress(item.uri)}>
                             <Image style={styles.bookImage} source={item.cover ? { uri: item.cover } : require('../assets/icon.png')} />
 
@@ -104,9 +119,10 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                                 <Text style={styles.bookAuthor}>{item.author}</Text>
                             </View>
                         </TouchableOpacity>
-                    )}
-                />
-            )}
+                    )
+                )}
+            />
+            
 
             <Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader>
         </View>
