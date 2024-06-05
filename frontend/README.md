@@ -4,7 +4,6 @@
 
 - highglighteed word doesn't go away when book is changed, make it reset under specified conditions
 - when highlighting word not found in dictionary it keeps saying Loading...
-- book synchronization not working properly...
 - book doesn't remember page it was on last when new book is selected
 - bookmark that actually covers parts of the page would be cool
 - implement keeping track of daily progress section
@@ -42,6 +41,10 @@ Bugs/Small Todos:
 ## Done
 
 Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promise (async) | FastAPI
+
+- fixed synchronizing problem using a non-Promise hook from Reader library ✅
+    - ended using new useState to keep track of render and useEffect to fetch meta data when re-rendered.
+    - nice that the Reader component had a onReady parameter :)
 
 - implemented Epub reader and ability to do everything as before with the text :) yay for compartmentalization ✅
 
