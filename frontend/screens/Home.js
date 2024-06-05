@@ -1,6 +1,6 @@
 import { Reader, ReaderProvider, useReader } from '@epubjs-react-native/core';
 import { useState, useEffect } from 'react';
-import { Text, View, Image, FlatList, Alert, TouchableOpacity, StyleSheet } from 'react-native'
+import { Text, View, Image, FlatList, Alert, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useFileSystem } from '@epubjs-react-native/expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
@@ -32,7 +32,8 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             if (!assets) return;
             const { uri } = assets[0];
             setCurrentBook(uri);
-            setBookRendered(false);  // Reset book rendered state
+            setBookRendered(false);
+            setLoading(true);
         } catch (error) {
             console.log("Error in addBook:", error);
         }
@@ -56,6 +57,8 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                     setBooks(prevBooks => [...prevBooks, { id: Math.random().toString(), uri: currentBook, title, author, cover }]);
                 } catch (error) {
                     console.log("Error fetching meta:", error);
+                } finally {
+                    setLoading(false);  // Stop loading indicator
                 }
             };
 
@@ -118,6 +121,12 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                 )}
             />
 
+            {loading && (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#ebf4f6" />
+                </View>
+            )}
+
             <Reader
                 height="0"
                 src={currentBook}
@@ -158,6 +167,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 5
+    },
+    loadingContainer: {
+        position: 'absolute',
+        top: 640,
+        right: 30,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#f4a261',     
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 6
     },
     bookContainer: {
         height: 720,
