@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Text, View, Image, FlatList, Alert, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useFileSystem } from '@epubjs-react-native/expo-file-system';
+import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 
 const Home = ({ currentBook, setCurrentBook }) => {
@@ -24,6 +25,8 @@ const Home = ({ currentBook, setCurrentBook }) => {
 const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
     const [loading, setLoading] = useState(false);
     const [bookRendered, setBookRendered] = useState(false);
+
+    const navigation = useNavigation();
     const { getMeta } = useReader();
 
     const addBook = async () => {
@@ -72,6 +75,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             setLoading(true);
             await setCurrentBook(uri);
             setBookRendered(false);  // Reset book rendered state
+            navigation.navigate('Read');
         } catch (error) {
             console.error("Error handling book press:", error);
         } finally {
