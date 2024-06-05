@@ -13,9 +13,9 @@ const Home = ({ currentBook, setCurrentBook }) => {
                 <Text style={styles.title}>Books</Text>
             </View>
             <View style={styles.body}>
-            <ReaderProvider>
-                <HandleBooks books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>
-            </ReaderProvider> 
+                <ReaderProvider>
+                    <HandleBooks books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>
+                </ReaderProvider> 
             </View>
         </View>
     )
@@ -23,44 +23,52 @@ const Home = ({ currentBook, setCurrentBook }) => {
 
 const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
     const [loading, setLoading] = useState(false);
+    const [bookRendered, setBookRendered] = useState(false);
     const { getMeta } = useReader();
 
     const addBook = async () => {
         try {
-            console.log("step 1")
             const { assets } = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-            console.log("2. just picked a book", {assets})
             if (!assets) return;
             const { uri } = assets[0];
             setCurrentBook(uri);
-            console.log("3. finished updating current book uri", {uri})
-    
-            // Fetch metadata immediately after setting the current book
-            console.log("4. before getting meta info")
-            const { title, author, cover } = await getMeta();
-            console.log("5. after getting meta info", {title})
-
-             // Check if the book already exists in the books array
-            const bookExists = books.some(book => book.title === title && book.author === author && book.cover === cover);
-            if (bookExists) {
-                Alert.alert('Duplicate Book', 'This book is already loaded.');
-                return;
-            }
-            // Add the book to the books array if it doesn't already exist
-            console.log("6. before adding book to array")
-            setBooks(prevBooks => [...prevBooks, { id: Math.random(), uri, title, author, cover }]);
-            console.log("7. after adding book to array", {author} )
-
+            setBookRendered(false);  // Reset book rendered state
         } catch (error) {
             console.log("Error in addBook:", error);
         }
     };
 
+    useEffect(() => {
+        if (bookRendered && currentBook) {
+            // Fetch metadata once the book is rendered
+            const fetchMeta = async () => {
+                try {
+                    const { title, author, cover } = getMeta();
+                    console.log("after getting meta info", { title });
+
+                    // Check if the book already exists in the books array
+                    const bookExists = books.some(book => book.title === title && book.author === author && book.cover === cover);
+                    if (bookExists) {
+                        Alert.alert('Duplicate Book', 'This book is already loaded.');
+                        return;
+                    }
+                    // Add the book to the books array if it doesn't already exist
+                    setBooks(prevBooks => [...prevBooks, { id: Math.random().toString(), uri: currentBook, title, author, cover }]);
+                } catch (error) {
+                    console.log("Error fetching meta:", error);
+                }
+            };
+
+            fetchMeta();
+        }
+    }, [bookRendered]);
+
+
     const handlePress = async (uri) => {
         try {
             setLoading(true);
             await setCurrentBook(uri);
-            // Any other async functions to run after setCurrentBook
+            setBookRendered(false);  // Reset book rendered state
         } catch (error) {
             console.error("Error handling book press:", error);
         } finally {
@@ -79,16 +87,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                         [
                             {
                                 text: 'Ok',
-                                onPress: async () => {
-                                    setLoading(true); // Set loading to true before the async operation
-                                    try {
-                                        await addBook(); // Wait for addBook to complete
-                                        setLoading(false); // Set loading to false after the async operation
-                                    } catch (error) {
-                                        setLoading(false); // Set loading to false if there is an error
-                                        console.error(error); // Handle the error as needed
-                                    }
-                                },
+                                onPress: addBook
                             },
                             {
                                 text: 'Cancel',
@@ -108,23 +107,24 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                 data={books}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    loading ? (
-                        <Text>loading...</Text> 
-                    ) : (
-                        <TouchableOpacity style={styles.book} onPress={() => handlePress(item.uri)}>
-                            <Image style={styles.bookImage} source={item.cover ? { uri: item.cover } : require('../assets/icon.png')} />
+                    <TouchableOpacity style={styles.book} onPress={() => handlePress(item.uri)}>
+                        <Image style={styles.bookImage} source={item.cover ? { uri: item.cover } : require('../assets/icon.png')} />
 
-                            <View style={styles.bookInfo}>
-                                <View style={{flexWrap: 'wrap', flexDirection: 'row'}}><Text style={styles.bookTitle}>{item.title}</Text></View>
-                                <Text style={styles.bookAuthor}>{item.author}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )
+                        <View style={styles.bookInfo}>
+                            <View style={{flexWrap: 'wrap', flexDirection: 'row'}}><Text style={styles.bookTitle}>{item.title}</Text></View>
+                            <Text style={styles.bookAuthor}>{item.author}</Text>
+                        </View>
+                    </TouchableOpacity>
                 )}
             />
-            
 
-            <Reader height="0" src={currentBook} fileSystem={useFileSystem}></Reader>
+            <Reader
+                height="0"
+                src={currentBook}
+                fileSystem={useFileSystem}
+                onReady={() => setBookRendered(true)} 
+            />
+
         </View>
     );
 }
