@@ -1,14 +1,22 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, SafeAreaView, StyleSheet } from 'react-native';
 
 import { Reader, ReaderProvider, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/expo-file-system';
+import { useFocusEffect } from '@react-navigation/native';
 
 import TopSection from '../components/TopSection';
 import { AppProvider } from '../contexts/AppContext';
 
 const Read = ({ currentBook }) => {
     const [highlightedWord, setHighlightedWord] = useState('');
+
+    useFocusEffect(
+        React.useCallback(() => {
+            // Reset highlightedWord when the screen loses focus
+            return () => setHighlightedWord('');
+        }, [])
+    );
 
     return (
         <SafeAreaView style={{ flex: 1 }}>

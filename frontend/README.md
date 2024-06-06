@@ -2,7 +2,8 @@
 
 ## Todo:
 
-- highglighteed word doesn't go away when book is changed, make it reset under specified conditions
+- flashcard (make hanja part scrollable and better UI (non hanja should not display that section))
+
 - when highlighting word not found in dictionary it keeps saying Loading...
 - book doesn't remember page it was on last when new book is selected
 - bookmark that actually covers parts of the page would be cool
@@ -42,6 +43,7 @@ Bugs/Small Todos:
 
 Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promise (async) | FastAPI
 
+- highglighteed word doesn't go away when book is changed, make it reset under specified conditions ✅
 - fixed synchronizing problem using a non-Promise hook from Reader library ✅
     - ended using new useState to keep track of render and useEffect to fetch meta data when re-rendered.
     - nice that the Reader component had a onReady parameter :)
