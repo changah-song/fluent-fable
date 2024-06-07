@@ -86,7 +86,7 @@ const DictionaryContent = ({ highlightedWord }) => {
                                 </View>
                                 {dictionaryData[index].length > 1 ? (
                                     <TouchableOpacity onPress={() => toggleExpanded(word)}>
-                                        <Text style={{ color: '#ebf4f6', textDecorationLine: 'underline', marginLeft: 5}}>
+                                        <Text style={{ color: '#3D62A2', textDecorationLine: 'underline', marginLeft: 5}}>
                                             {expandedWords.includes(word) ? 'less' : 'more'}
                                         </Text>
                                     </TouchableOpacity>
@@ -124,7 +124,8 @@ const DictionaryContent = ({ highlightedWord }) => {
                             ))}
                         </>
                         ) : (
-                            <Text> "Loading..." </Text>
+                            <Text style={{ color: '#494949' }}> <Text style={{ fontWeight: 'bold', color: 'black' }}>{word}</Text> [ no dictionary entry ]
+                             </Text>
                         )}
                     </View>
                 ))}

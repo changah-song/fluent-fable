@@ -18,11 +18,11 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                     {result ? 
                         <View>
                             <View style={{flex: 1, flexWrap: 'wrap', flexDirection: 'row', width:'100%'}}>
-                                <Text style={{flex: 0.13, fontSize: 30, marginLeft: 7, marginTop: 2}}>{hanja}</Text>
-                                <ScrollView style={{flex: 0.87, height: '80%', marginTop: 7}}>
+                                <Text style={styles.hanjaHeader}> { hanja } </Text>
+                                <ScrollView style={styles.hanjaHeaderDescription}>
                                 {title.map((word, index) => {
                                     return (
-                                        <Text key={index} style={{fontWeight: 'bold'}}>{word.meaning} </Text>
+                                        <Text key={index} style={styles.headerDescriptionText}>{word.meaning} </Text>
                                     )
                                 })}
                                 </ScrollView>
@@ -30,20 +30,20 @@ const HanjaDetails = ({ hanja, handleHanjaPress }) => {
                             <ScrollView style={{height: '80%', top: 0, left: 0}}>
                                 {result.map((word, index) => {
                                     return (
-                                        <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                                        <View key={index} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', marginBottom: 4 }}>
                                             <Text style={styles.text}>{word.korean}</Text>
                                             <View style={{flexDirection: 'row'}}>
                                                 <Text style={{marginHorizontal: 5}}>(</Text>
-                                                    {word.hanja.split('').map((newHanja, index) => {
-                                                        return(
-                                                            <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
-                                                                <Text>{newHanja}</Text>
-                                                            </TouchableOpacity>
-                                                        )
-                                                    })}
-                                                    <Text style={{marginHorizontal: 5}}>)</Text>
-                                                <Text style={styles.text}> {word.meaning}</Text>
+                                                {word.hanja.split('').map((newHanja, index) => {
+                                                    return(
+                                                        <TouchableOpacity key={index} onPress={() => handleHanjaPress(newHanja)}>
+                                                            <Text>{newHanja}</Text>
+                                                        </TouchableOpacity>
+                                                    )
+                                                })}
+                                                <Text style={{marginHorizontal: 5}}>)</Text>
                                             </View>
+                                            <Text style={styles.text}>- {word.meaning}</Text>
                                         </View>
                                     )
                                 })}
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
     modalContent: {
         position: 'absolute',
         width: "90%",
-        height: "65%",
-        top: 220,
+        height: "85%",
+        top: 100,
         backgroundColor: 'white', 
         padding: 10,
         borderRadius: 10,
@@ -86,6 +86,21 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    hanjaHeader: {
+        fontSize: 35, 
+        borderWidth: 1,
+        borderRadius: 10,
+        fontFamily: 'serif'
+    },
+    hanjaHeaderDescription: {
+        height: '80%', 
+        width: '50%',
+        marginLeft: 10,
+    },
+    headerDescriptionText: {
+        fontFamily: 'serif',
+        fontSize: 20
     },
     text: {
     }
