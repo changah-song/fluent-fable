@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
         top: 2, 
         left: 5, 
         width: '85%',
-        height: '100%'
+        height: '25%'
     },
     toggleButton: {
         left: 370,
