@@ -19,9 +19,11 @@ const TopSection = ({ highlightedWord }) => {
     return (
         <View>
             {/* shows highlighted word, header */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.title}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold', fontFamily: 'serif' }}>{highlightedWord}</Text>
-            </ScrollView>
+            <View style={styles.title}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', fontFamily: 'serif' }}>{highlightedWord}</Text>
+                </ScrollView>
+            </View>
             
             {/* toggle between translator and dictionary */}
             <TouchableOpacity onPress={toggleContent} style={styles.toggleButton}>
@@ -42,7 +44,7 @@ const styles = StyleSheet.create({
         top: 2, 
         left: 5, 
         width: '85%',
-        height: '100px'
+        height: 25,
     },
     toggleButton: {
         left: 370,
