@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
 import { updateLevel } from '../Database';
 import Hanja from '../TopSection/Hanja';
@@ -153,6 +153,16 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
     transform: [{ rotateX: backInterpolate }, { translateX: pan.x }, { translateY: pan.y }],
   };
 
+  const renderedHanja = useMemo(() => (
+    vocab.hanja.split('').map((word, index) => (
+      /[\u4e00-\u9fff]+/.test(word) 
+        ? <View key={index} style={styles.individualHanja}>
+            <Hanja hanja={word} />
+          </View>
+        : <View key={index}></View>
+    ))
+  ), [vocab.hanja]);
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={flipCard}>
@@ -173,19 +183,7 @@ const Flashcard = ({ vocab, setTodaySwiped }) => {
           <Text style={styles.origin}>{vocab.hanja}</Text>
 
           <View style={styles.hanjaContainer}>
-            {vocab.hanja.split('').map((word, index) => {
-              return (
-                
-                /[\u4e00-\u9fff]+/.test(word) 
-                ? 
-                <View key={index} style={styles.individualHanja}>
-                  <Hanja hanja={word} />
-                </View>
-                :
-                <View key={index}></View>
-
-              )
-            })}
+            {renderedHanja}
           </View>
 
         </Animated.View>
