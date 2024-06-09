@@ -30,7 +30,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
     const [bookRendered, setBookRendered] = useState(false);
 
     const navigation = useNavigation();
-    const { getMeta, goToLocation } = useReader();
+    const { getMeta } = useReader();
 
     const addBook = async () => {
         try {
@@ -79,13 +79,6 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             setLoading(true);
             await setCurrentBook(uri);
             setBookRendered(false);  // Reset book rendered state
-
-            const book = books.find(book => book.uri === uri);
-            if (book && book.location) {
-                console.log("go to location...", book.title, book.location)
-                goToLocation(book.location);
-            }
-
             navigation.navigate('Read');
         } catch (error) {
             console.error("Error handling book press:", error);
@@ -117,7 +110,6 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             >
                 <Icon name="plus" size={20} color="#ebf4f6" />
             </TouchableOpacity>
-
 
             <FlatList
                 showsVerticalScrollIndicator={true}

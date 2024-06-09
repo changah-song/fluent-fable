@@ -2,9 +2,9 @@
 
 ## Todo:
 
+- 'book already loaded' alert and logical errors..
 - flashcard (make hanja part scrollable and better UI (non hanja should not display that section))
 
-- book doesn't remember page it was on last when new book is selected
 - bookmark that actually covers parts of the page would be cool
 - implement keeping track of daily progress section
 - implement streaks using the global variable
@@ -42,7 +42,9 @@ Bugs/Small Todos:
 
 Learned So Far: PanResponder/Animated | Modal | Context | CORS (server) | Promise (async) | FastAPI
 
-- when highlighting word not found in dictionary it keeps saying Loading...✅
+- book doesn't remember page it was on last when new book is selected ✅
+    - basic implementation where the location is saved
+- when highlighting word not found in dictionary it keeps saying Loading... ✅
     - modal looks cleaner and some bugs fixed
 
 - highglighteed word doesn't go away when book is changed, make it reset under specified conditions ✅
