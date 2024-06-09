@@ -1,6 +1,7 @@
 import { Entypo } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Foundation } from '@expo/vector-icons';
+import * as SplashScreen from 'expo-splash-screen';
 
 import Home from './screens/Home';
 import Learn from './screens/Learn';
@@ -17,6 +18,7 @@ import { TranslatorProvider } from 'react-native-translator';
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+	const [books, setBooks] = useState([]);
 	const [currentBook, setCurrentBook] = useState(null);
 
 	useEffect(() => {
@@ -77,10 +79,10 @@ export default function App() {
 
 			})}>
 			<Tab.Screen name="Home" >
-				{props => <Home {...props} currentBook={currentBook} setCurrentBook={setCurrentBook}/>}
+				{props => <Home {...props} books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>}
 			</Tab.Screen>
 			<Tab.Screen name="Read" >
-				{props => <Read {...props} currentBook={currentBook} />}
+				{props => <Read {...props} books={books} setBooks={setBooks} currentBook={currentBook} />}
 			</Tab.Screen>
 			<Tab.Screen name="Learn" component={Learn} />
 			</Tab.Navigator>

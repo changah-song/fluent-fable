@@ -6,8 +6,7 @@ import { useFileSystem } from '@epubjs-react-native/expo-file-system';
 import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 
-const Home = ({ currentBook, setCurrentBook }) => {
-    const [books, setBooks] = useState([]);
+const Home = ({ books, setBooks, currentBook, setCurrentBook }) => {
     return (
         <View>
             <View style={styles.header}>
@@ -15,7 +14,11 @@ const Home = ({ currentBook, setCurrentBook }) => {
             </View>
             <View style={styles.body}>
                 <ReaderProvider>
-                    <HandleBooks books={books} setBooks={setBooks} currentBook={currentBook} setCurrentBook={setCurrentBook}/>
+                    <HandleBooks 
+                        books={books} 
+                        setBooks={setBooks} 
+                        currentBook={currentBook} 
+                        setCurrentBook={setCurrentBook}/>
                 </ReaderProvider> 
             </View>
         </View>
@@ -27,7 +30,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
     const [bookRendered, setBookRendered] = useState(false);
 
     const navigation = useNavigation();
-    const { getMeta } = useReader();
+    const { getMeta, goToLocation } = useReader();
 
     const addBook = async () => {
         try {
@@ -43,6 +46,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
     };
 
     useEffect(() => {
+        console.log("BOOK RENDERED!")
         if (bookRendered && currentBook) {
             // Fetch metadata once the book is rendered
             const fetchMeta = async () => {
@@ -57,7 +61,7 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
                         return;
                     }
                     // Add the book to the books array if it doesn't already exist
-                    setBooks(prevBooks => [...prevBooks, { id: Math.random().toString(), uri: currentBook, title, author, cover }]);
+                    setBooks(prevBooks => [...prevBooks, { id: Math.random().toString(), uri: currentBook, title, author, cover, location: null }]);
                 } catch (error) {
                     console.log("Error fetching meta:", error);
                 } finally {
@@ -75,6 +79,13 @@ const HandleBooks = ({ books, setBooks, currentBook, setCurrentBook }) => {
             setLoading(true);
             await setCurrentBook(uri);
             setBookRendered(false);  // Reset book rendered state
+
+            const book = books.find(book => book.uri === uri);
+            if (book && book.location) {
+                console.log("go to location...", book.title, book.location)
+                goToLocation(book.location);
+            }
+
             navigation.navigate('Read');
         } catch (error) {
             console.error("Error handling book press:", error);
