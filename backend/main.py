@@ -122,6 +122,11 @@ AI_TIER_LIMITS = {
 CACHE_DB_PATH = os.path.join(os.path.dirname(__file__), "cache.db")
 EN_DICT_DB_PATH = os.path.join(os.path.dirname(__file__), "en_dict.db")
 ZH_DICT_DB_PATH = os.path.join(os.path.dirname(__file__), "zh_dict.db")
+# Bundled KRDICT (한국어기초사전) snapshot, English glosses only. When present it
+# serves Korean lookups locally and the live KRDICT API is only hit for the long
+# tail of words the snapshot doesn't cover. Optional: if the file is absent every
+# Korean lookup falls back to the live API exactly as before.
+KO_DICT_DB_PATH = os.path.join(os.path.dirname(__file__), "ko_dict.db")
 PROFICIENCY_LEVELS_DB_PATH = os.path.join(os.path.dirname(__file__), "proficiency_levels.db")
 SQLITE_LOOKUP_BATCH_SIZE = 450
 BOOK_LEVEL_SAMPLE_SIZE = 100
@@ -188,6 +193,20 @@ def get_zh_dict_db_connection():
 
 def is_zh_dict_db_installed() -> bool:
     return os.path.exists(ZH_DICT_DB_PATH)
+
+
+def get_ko_dict_db_connection():
+    """Open a read-only connection to the local KRDICT Korean dictionary DB."""
+    if not os.path.exists(KO_DICT_DB_PATH):
+        raise HTTPException(status_code=503, detail="Korean dictionary database is not installed")
+
+    conn = sqlite3.connect(f"file:{KO_DICT_DB_PATH}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def is_ko_dict_db_installed() -> bool:
+    return os.path.exists(KO_DICT_DB_PATH)
 
 
 def is_proficiency_levels_db_installed() -> bool:
@@ -2942,6 +2961,116 @@ async def translate_text(payload: dict, auth: dict[str, Any] = Depends(verify_su
     return {"translatedText": translated_text}
 
 
+# ─── Bundled KRDICT Snapshot (offline) ────────────────────────────────────────
+# When ko_dict.db is installed these functions resolve Korean words locally,
+# mirroring the English/Chinese offline paths. They only cover the English gloss
+# (the snapshot is imported English-only), which matches the live KO path today:
+# both _preprocess_core's cache query and lookup_stem_in_krdict already operate
+# solely at DEFAULT_INTERFACE_LANGUAGE. Anything the snapshot misses still falls
+# through to the live KRDICT API.
+def ko_dictionary_no_entry(stem: str) -> dict:
+    return {
+        "stem": stem,
+        "definition": None,
+        "hanja": None,
+        "pos": None,
+        "domain": None,
+        "language": "ko",
+        "interface_language": DEFAULT_INTERFACE_LANGUAGE,
+    }
+
+
+def ko_dictionary_row_to_result(row: sqlite3.Row) -> dict:
+    """Map a ko_dictionary row to the same shape _preprocess_core caches/returns."""
+    data = dict(row)
+    return {
+        "stem": (data.get("stem") or "").strip(),
+        "definition": data.get("definition"),
+        "hanja": data.get("hanja") or None,
+        "pos": data.get("pos"),
+        "domain": data.get("domain"),
+        "language": "ko",
+        "interface_language": DEFAULT_INTERFACE_LANGUAGE,
+    }
+
+
+def lookup_ko_dictionary_entries(stems: list[str]) -> tuple[list[dict], int]:
+    """Resolve stems against the bundled snapshot's primary sense.
+
+    Returns (hits, found_count) — only the stems actually present, so the caller
+    can hand the misses to the live KRDICT fan-out. Mirrors
+    lookup_en_dictionary_entries, but chunked because a book can carry thousands
+    of stems (well past SQLite's bound-parameter limit).
+    """
+    normalized = unique_nonempty_strings(stems)
+    if not normalized:
+        return [], 0
+
+    conn = get_ko_dict_db_connection()
+    rows_by_stem: dict[str, dict] = {}
+    try:
+        for chunk in chunked_values(normalized):
+            placeholders = ",".join(["?"] * len(chunk))
+            # sense_no = 1 → primary sense, matching the live API's first item.
+            rows = conn.execute(
+                f"""
+                SELECT stem, pos, hanja, definition, domain
+                FROM ko_dictionary
+                WHERE stem IN ({placeholders}) AND sense_no = 1
+                """,
+                chunk,
+            ).fetchall()
+            for row in rows:
+                result = ko_dictionary_row_to_result(row)
+                stem = result["stem"]
+                if stem and stem not in rows_by_stem:
+                    rows_by_stem[stem] = result
+    finally:
+        conn.close()
+
+    hits = [rows_by_stem[stem] for stem in normalized if stem in rows_by_stem]
+    return hits, len(rows_by_stem)
+
+
+def lookup_ko_dictionary_search(query: str) -> list[dict]:
+    """Resolve a single tapped word against the snapshot, in the shape
+    search_krdict_entries returns (word/origin/pos/pronunciation/romanization/
+    transWord). Returns every sense, ordered, or [] on a miss so the caller can
+    fall back to the live API. Pronunciation isn't in the snapshot, so it's None.
+    """
+    normalized = query.strip() if isinstance(query, str) else ""
+    if not normalized:
+        return []
+
+    conn = get_ko_dict_db_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT stem, pos, hanja, definition, domain
+            FROM ko_dictionary
+            WHERE stem = ?
+            ORDER BY sense_no
+            """,
+            [normalized],
+        ).fetchall()
+    finally:
+        conn.close()
+
+    results = []
+    for row in rows:
+        data = dict(row)
+        word_text = (data.get("stem") or normalized).strip()
+        results.append({
+            "word": word_text,
+            "origin": data.get("hanja") or "N/A",
+            "pos": data.get("pos"),
+            "pronunciation": None,
+            "romanization": romanize_korean_text(word_text),
+            "transWord": data.get("definition") or "N/A",
+        })
+    return results
+
+
 # ─── KRDICT Helper ────────────────────────────────────────────────────────────
 async def lookup_stem_in_krdict(
     client: httpx.AsyncClient,
@@ -3011,6 +3140,20 @@ async def search_krdict_entries(
     krdict_key: str,
     interface_language: str = DEFAULT_INTERFACE_LANGUAGE,
 ) -> list[dict]:
+    # Offline-first: the bundled snapshot is English-only, so it can only serve
+    # requests at the default (English) interface language. On a hit we skip the
+    # network entirely; on a miss we fall through to the live API below.
+    if (
+        interface_language == DEFAULT_INTERFACE_LANGUAGE
+        and is_ko_dict_db_installed()
+    ):
+        loop = asyncio.get_event_loop()
+        bundle_results = await loop.run_in_executor(
+            None, lookup_ko_dictionary_search, query
+        )
+        if bundle_results:
+            return bundle_results
+
     trans_lang = KRDICT_INTERFACE_LANGUAGES.get(
         interface_language,
         KRDICT_INTERFACE_LANGUAGES[DEFAULT_INTERFACE_LANGUAGE],
@@ -3118,12 +3261,27 @@ async def _preprocess_core(text: str, krdict_key: str, max_stems=None, progress_
     cached_results = [dict(row) for row in cached_rows]
     missing_stems = [stem for stem in unique_stems if stem not in cached_stems]
 
+    # Offline-first: resolve as many cache misses as possible from the bundled
+    # snapshot before the live KRDICT fan-out. These hits are NOT written back to
+    # cache.db — the snapshot is already a fast local read, and keeping its
+    # entries out of the cache stops cache.db from duplicating the bundle. Only
+    # the live-fetched long tail (below) is cached, so cache.db holds exactly what
+    # the snapshot lacks.
+    ko_dict_results: list[dict] = []
+    if missing_stems and is_ko_dict_db_installed():
+        ko_dict_results, _ = await loop.run_in_executor(
+            None, lookup_ko_dictionary_entries, missing_stems
+        )
+        ko_hit_stems = {result["stem"] for result in ko_dict_results}
+        missing_stems = [stem for stem in missing_stems if stem not in ko_hit_stems]
+
     await report(
         "cache_checked",
         total_stems=len(unique_stems),
         cache_hits=len(cached_stems),
         missing_stems=len(missing_stems),
         fetched_stems=0,
+        snapshot_hits=len(ko_dict_results),
     )
 
     new_results: list[dict] = []
@@ -3209,7 +3367,7 @@ async def _preprocess_core(text: str, krdict_key: str, max_stems=None, progress_
             no_entry_count=len(no_entry_results),
         )
 
-    unordered_results = cached_results + new_results + no_entry_results
+    unordered_results = cached_results + ko_dict_results + new_results + no_entry_results
     results_by_stem: dict[str, dict] = {}
     for result in unordered_results:
         stem = result.get("stem") if isinstance(result, dict) else None
