@@ -222,6 +222,19 @@ const TopSection = ({
         ? Math.ceil(dictionaryContentHeight)
         : expandedFallbackHeight;
     const isDictionarySheetTall = isLookupExpanded || dictionaryExpandedRows > 0;
+    // Compact sheets hug their measured content so a short (one-line) definition
+    // doesn't leave dead space above the action buttons. The definition itself is
+    // capped at two rows and scrolls inside DictionaryContent, so the measured
+    // content never grows past the fixed ceiling below. `compactChrome` is the
+    // non-scrolling height around the definition (handle + action row + padding),
+    // which varies with placement and whether the roots handle is shown.
+    const compactCeiling = canExpandLookup ? DICTIONARY_COMPACT_HEIGHT : DICTIONARY_NO_ROOT_HEIGHT;
+    const compactChrome = isTopPlacement
+        ? (canExpandLookup ? 124 : 104)
+        : (canExpandLookup ? 132 : 112);
+    const compactHeight = dictionaryContentHeight > 0
+        ? Math.min(compactCeiling, Math.ceil(dictionaryContentHeight) + compactChrome)
+        : compactCeiling;
     const dictionaryHeight = isDictionaryTranslationSheet
         ? DICTIONARY_TRANSLATION_HEIGHT
         : isExplainMode
@@ -233,9 +246,7 @@ const TopSection = ({
             DICTIONARY_EXPANDED_MAX_HEIGHT,
             Math.max(DICTIONARY_EXPANDED_MAX_HEIGHT, expandedContentHeight)
         )
-        : canExpandLookup
-        ? DICTIONARY_COMPACT_HEIGHT
-        : DICTIONARY_NO_ROOT_HEIGHT;
+        : compactHeight;
     const translationText = translationTarget || visibleWord;
     const translationSourceLanguage = normalizeBookLanguage(
         sourceBook?.language ?? activeTargetLanguage ?? 'ko'
