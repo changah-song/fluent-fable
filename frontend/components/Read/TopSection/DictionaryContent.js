@@ -1914,27 +1914,9 @@ const DictionaryContent = ({
                                 </View>
                             ) : null}
                             {definition ? (
-                                // In the compact panel the definition is capped at two
-                                // rows and scrolls past that, so the sheet hugs the
-                                // definition height instead of leaving a gap above the
-                                // action buttons. Expanded, it renders in full.
-                                isPanelExpanded ? (
-                                    <Text selectable style={[styles.definitionText, { color: palette.secondaryText }]}>
-                                        {definition}
-                                    </Text>
-                                ) : (
-                                    <ScrollView
-                                        style={styles.definitionScroll}
-                                        nestedScrollEnabled
-                                        showsVerticalScrollIndicator={false}
-                                        bounces={false}
-                                        keyboardShouldPersistTaps="handled"
-                                    >
-                                        <Text selectable style={[styles.definitionText, { color: palette.secondaryText }]}>
-                                            {definition}
-                                        </Text>
-                                    </ScrollView>
-                                )
+                                <Text selectable style={[styles.definitionText, { color: palette.secondaryText }]}>
+                                    {definition}
+                                </Text>
                             ) : (
                                 <Text selectable style={[styles.emptyDefinition, { color: palette.emptyText }]}>
                                     {t('lookup.noDictionaryEntry')}
@@ -2411,19 +2393,16 @@ const createStyles = (colors) => StyleSheet.create({
         lineHeight: 23,
         letterSpacing: 0,
         textAlign: 'center',
-        flexShrink: 1,
-    },
-    // Caps the compact definition at ~two rows (2 × 23 lineHeight plus a little
-    // padding headroom); anything longer scrolls within this box.
-    definitionScroll: {
-        flexShrink: 1,
-        maxHeight: 56,
+        // No flexShrink: when the definition can't share the badge's line it wraps
+        // as a whole to the next row, then wraps internally within the full width.
+        maxWidth: '100%',
     },
     definitionRow: {
-        // Stacked (not side-by-side) so the POS badge centers on its own line
-        // above the centered definition; a row left the badge hanging to the
-        // left of the centered group.
-        flexDirection: 'column',
+        // A wrapping, centered row: the POS badge and definition sit side by side
+        // when they fit; a definition too long to share the line wraps as a whole
+        // to the next row under the badge (see definitionText.maxWidth).
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,

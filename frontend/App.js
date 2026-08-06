@@ -38,7 +38,9 @@ import Home from './screens/Home';
 import Learn from './screens/Learn';
 import Profile from './screens/Profile';
 import Read from './screens/Read';
-import Write from './screens/Write';
+// Write screen is shelved: kept on disk (screens/Write.js) but no longer routed.
+// To un-shelf, restore this import and the <Tab.Screen name="Write"> block below.
+// import Write from './screens/Write';
 import { GUEST_OWNER_ID, getLocalOwnerId } from './services/localDataScope';
 import {
     getActiveOwnerId,
@@ -581,14 +583,7 @@ function ThemedAppShell({
                             />
                         )}
                     </Tab.Screen>
-                    <Tab.Screen name="Write">
-                        {props => (
-                            <Write
-                                {...props}
-                                user={user}
-                            />
-                        )}
-                    </Tab.Screen>
+                    {/* Write tab shelved — see the commented-out import above to un-shelf. */}
                     <Tab.Screen name="Profile">
                         {props => (
                             <Profile

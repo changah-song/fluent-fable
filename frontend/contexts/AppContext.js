@@ -11,7 +11,9 @@ import React, {
 
 import {
   DEFAULT_LANGUAGE_SETTINGS,
+  DEFAULT_CHINESE_SCRIPT,
   getLanguageLabel,
+  normalizeChineseScript,
   normalizeLanguageCode,
   normalizeInterfaceLanguageForTarget,
 } from '../constants/languages';
@@ -30,6 +32,7 @@ import {
 } from '../services/accountSettingsCloudSync';
 import {
   LANGUAGE_SETTINGS_KEY,
+  setRuntimeChineseScript,
   setRuntimeInterfaceLanguage,
   setRuntimeTargetLanguage,
 } from '../services/interfaceLanguage';
@@ -56,6 +59,7 @@ const AppContext = createContext({
   setDictMode: () => {},
   ...DEFAULT_LANGUAGE_SETTINGS,
   setTargetLanguage: () => {},
+  setChineseScript: () => {},
   setNativeLanguage: () => {},
   setInterfaceLanguage: () => {},
   levelsByLanguage: DEFAULT_PROFICIENCY_LEVELS_BY_LANGUAGE,
@@ -118,6 +122,10 @@ const normalizeLanguageSettings = (settings = {}) => {
 
   return {
     targetLanguage,
+    chineseScript: normalizeChineseScript(
+      settings.chineseScript ?? settings.chinese_script,
+      DEFAULT_CHINESE_SCRIPT
+    ),
     nativeLanguage: normalizeLanguageCode(
       settings.nativeLanguage ?? settings.native_language,
       DEFAULT_LANGUAGE_SETTINGS.nativeLanguage
@@ -247,6 +255,7 @@ export const AppProvider = ({ children, user }) => {
       latestLanguageSettingsRef.current = next;
       setRuntimeInterfaceLanguage(next.interfaceLanguage);
       setRuntimeTargetLanguage(next.targetLanguage);
+      setRuntimeChineseScript(next.chineseScript);
       setRuntimeActiveProfileId(next.activeProfileId, next.targetLanguage);
       persistLocalLanguageSettings(next).catch((error) => {
         console.warn('[AppContext] Failed to persist language settings:', error);
@@ -300,7 +309,9 @@ export const AppProvider = ({ children, user }) => {
       ownerId,
       generation,
       targetLanguage: settings.targetLanguage,
-      script: settings.targetLanguage === 'zh' ? 'zh-Hans' : undefined,
+      script: settings.targetLanguage === 'zh'
+        ? normalizeChineseScript(settings.chineseScript, DEFAULT_CHINESE_SCRIPT)
+        : undefined,
       displayName: getLanguageLabel(settings.targetLanguage),
     });
 
@@ -377,6 +388,7 @@ export const AppProvider = ({ children, user }) => {
       latestLanguageSettingsRef.current = localWithTimestamp;
       setRuntimeInterfaceLanguage(localWithTimestamp.interfaceLanguage);
       setRuntimeTargetLanguage(localWithTimestamp.targetLanguage);
+      setRuntimeChineseScript(localWithTimestamp.chineseScript);
       setRuntimeActiveProfileId(localWithTimestamp.activeProfileId, localWithTimestamp.targetLanguage);
       setLanguageSettings(localWithTimestamp);
       await persistLocalLanguageSettings(localWithTimestamp);
@@ -397,6 +409,9 @@ export const AppProvider = ({ children, user }) => {
       native_language: localSettings.nativeLanguage,
     });
     let cloudSettings = normalizeLanguageSettings({
+      // chineseScript is a local-only display preference (not yet a cloud column),
+      // so always carry the local value through a cloud merge rather than defaulting.
+      chineseScript: localSettings.chineseScript,
       targetLanguage: cloudPreferences
         ? cloudPreferenceSettings.targetLanguage
         : localSettings.targetLanguage,
@@ -437,6 +452,7 @@ export const AppProvider = ({ children, user }) => {
       latestLanguageSettingsRef.current = nextSettings;
       setRuntimeInterfaceLanguage(nextSettings.interfaceLanguage);
       setRuntimeTargetLanguage(nextSettings.targetLanguage);
+      setRuntimeChineseScript(nextSettings.chineseScript);
       setRuntimeActiveProfileId(nextSettings.activeProfileId, nextSettings.targetLanguage);
       setLanguageSettings(nextSettings);
       await persistLocalLanguageSettings(nextSettings);
@@ -505,6 +521,7 @@ export const AppProvider = ({ children, user }) => {
         latestLanguageSettingsRef.current = nextSettings;
         setRuntimeInterfaceLanguage(nextSettings.interfaceLanguage);
         setRuntimeTargetLanguage(nextSettings.targetLanguage);
+        setRuntimeChineseScript(nextSettings.chineseScript);
         setRuntimeActiveProfileId(nextSettings.activeProfileId, nextSettings.targetLanguage);
         setLanguageSettings(nextSettings);
       } catch (error) {
@@ -544,27 +561,21 @@ export const AppProvider = ({ children, user }) => {
     });
   }, [activeOwnerId, languageSettingsReady, syncGeneration, syncLanguagePreferences, syncPaused, user]);
 
-  // Phase 2.1 cold start: give the active profile a non-null ability estimate
-  // (theta_0) seeded from the self-reported proficiency level. `ensureProfileAbilitySeed`
-  // is cold-only idempotent, so re-running on every level / profile / language
-  // change is safe — it seeds a fresh profile and refreshes the seed after a level
-  // change, but never clobbers a theta that behavior has already moved (Phase 3).
+  // Cold start: give the active profile a neutral, non-null ability row so
+  // scoring and reader underlines have a theta to move. Level is no longer
+  // self-reported — it's learned from reading (lookups / reviews / exposure move
+  // theta from neutral). `ensureProfileAbilitySeed` is cold-only idempotent, so
+  // re-running on every profile / language change never clobbers a theta that
+  // behavior has already moved (Phase 3).
   useEffect(() => {
     if (!languageSettingsReady) {
       return;
     }
 
-    const language = languageSettings.targetLanguage;
-    const rank = normalizeProficiencyRank(
-      language,
-      languageSettings.levelsByLanguage?.[language]
-    );
-
     ensureProfileAbilitySeed({
       ownerId: activeOwnerId,
       profileId: languageSettings.activeProfileId,
-      language,
-      rank,
+      language: languageSettings.targetLanguage,
     }).catch((error) => {
       console.warn('[AppContext] Failed to seed profile ability:', error?.message ?? error);
     });
@@ -573,7 +584,6 @@ export const AppProvider = ({ children, user }) => {
     languageSettingsReady,
     languageSettings.activeProfileId,
     languageSettings.targetLanguage,
-    languageSettings.levelsByLanguage,
   ]);
 
   const value = useMemo(() => ({
@@ -581,6 +591,8 @@ export const AppProvider = ({ children, user }) => {
     setDictMode,
     targetLanguage: languageSettings.targetLanguage,
     setTargetLanguage: (targetLanguage) => saveLanguageSettings({ targetLanguage }),
+    chineseScript: languageSettings.chineseScript,
+    setChineseScript: (chineseScript) => saveLanguageSettings({ chineseScript }),
     nativeLanguage: languageSettings.nativeLanguage,
     setNativeLanguage: (nativeLanguage) => saveLanguageSettings({ nativeLanguage }),
     interfaceLanguage: languageSettings.interfaceLanguage,
@@ -628,6 +640,7 @@ export const AppProvider = ({ children, user }) => {
     syncLanguagePreferences,
   }), [
     dictMode,
+    languageSettings.chineseScript,
     languageSettings.interfaceLanguage,
     languageSettings.levelsByLanguage,
     languageSettings.nativeLanguage,

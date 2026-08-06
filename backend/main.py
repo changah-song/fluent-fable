@@ -89,32 +89,16 @@ ANONYMOUS_LIMITS = {
     "daily_quota": 300,
 }
 
-# ─── Subscription tiers ───────────────────────────────────────────────────────
-# Two independent axes gate requests, and they exist for different reasons:
-#
-#   anonymous vs authenticated (above)  → infrastructure protection. Caps request
-#       size, stem counts, and total backend calls per day so one client can't
-#       flatten the server. Unrelated to what anyone paid.
-#   free vs pro (below)                 → monetization. Caps only the two endpoints
-#       that spend money at Anthropic.
-#
-# A request passes through both. Keeping them separate means pricing changes never
-# touch the abuse limits, and vice versa.
-TIER_FREE = "free"
-TIER_PRO = "pro"
-
-# Per-day allowances for the paid AI features, by tier.
-#
-# "lookup" counts only calls that actually reach Anthropic — a cache hit in
-# lookup_cache is served before this is consulted and costs the user nothing.
-#
-# The pro lookup number is not a product limit; it is an abuse ceiling well past
-# what a human reader can reach (marketed and experienced as unlimited). It caps
-# a scripted account's damage at roughly $10/month instead of unbounded.
-AI_TIER_LIMITS = {
-    TIER_FREE: {"lookup": 50, "assessment": 1},
-    TIER_PRO: {"lookup": 300, "assessment": 5},
-}
+# ─── Daily AI lookup limit ────────────────────────────────────────────────────
+# The app is free — there is no paid tier. This is the one per-user knob that
+# bounds spend at Anthropic: the maximum number of *cache-miss* in-context
+# explanations a single account can trigger per day. Cache hits (a word+sentence
+# anyone has looked up before) are served from lookup_cache for free and never
+# counted, and the shared cache means popular books' words cost nothing after the
+# first reader. Set generously for real readers; the global daily-spend circuit
+# breaker is the backstop against a scripted account. This is the only place the
+# value is read, so raise/lower it here.
+DAILY_LOOKUP_LIMIT = 250
 
 # ─── Server-Side Cache DB ─────────────────────────────────────────────────────
 # This SQLite database lives on the backend server and persists across app restarts.
@@ -1228,6 +1212,20 @@ async def enforce_daily_quota(auth: dict[str, Any], amount: int = 1):
     )
     if not allowed:
         raise HTTPException(status_code=429, detail="Daily backend quota exceeded")
+
+
+async def enforce_lookup_quota(user_id: str):
+    """Per-user daily cap on in-context explanations. Counts only cache-miss
+    lookups (the ones that actually spend at Anthropic); cache hits are free and
+    never reach here. Separate from the broader abuse 'general' quota above."""
+    allowed = await asyncio.to_thread(
+        _usage_check_and_increment, user_id, "lookup", DAILY_LOOKUP_LIMIT, 1
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"You've used all {DAILY_LOOKUP_LIMIT} in-context explanations for today.",
+        )
 
 
 def romanize_korean_text(text: str) -> str:
@@ -4169,6 +4167,8 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
         return cached
 
     # Only reached on a cache miss — i.e. we're about to spend on the model.
+    # Charge this lookup against the user's daily tier allowance before spending.
+    await enforce_lookup_quota(auth["user_id"])
     await enforce_ai_budget()
 
     target_language_name = LANGUAGE_DISPLAY_NAMES.get(target_language, target_language.upper())

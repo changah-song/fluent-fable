@@ -18,16 +18,14 @@ import * as Clipboard from 'expo-clipboard';
 import Auth from './Auth';
 import { deleteCurrentUserProfile } from '../services/accountDeletion';
 import { Screen } from '../components/ui';
-import CalibrationQuizModal from '../components/shared/CalibrationQuizModal';
-import VocabLevelModal from '../components/shared/VocabLevelModal';
-import { getProficiencyLevelOptions } from '../constants/proficiencyLevels';
-import { hasVocabSizeGrid } from '../services/vocabSizeLevels';
 import { useAppContext } from '../contexts/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
 import {
+    getActiveTargetLanguageOptionId,
     getInterfaceLanguageLabel,
     KRDICT_INTERFACE_LANGUAGE_OPTIONS,
     normalizeInterfaceLanguageCode,
+    TARGET_LANGUAGE_OPTIONS,
 } from '../constants/languages';
 import {
     CONTACT_EMAIL,
@@ -130,13 +128,14 @@ const ToggleRow = ({ label, description, value, onValueChange, isLast, styles, t
     </View>
 );
 
-const NavRow = ({ label, onPress, icon = 'chevron-right', isLast, styles, profileColors }) => (
+const NavRow = ({ label, value, onPress, icon = 'chevron-right', isLast, styles, profileColors }) => (
     <TouchableOpacity
         activeOpacity={0.7}
         onPress={onPress}
         style={[styles.row, isLast && styles.rowLast]}
     >
         <Text style={[styles.rowLabel, styles.rowLabelFlex]}>{label}</Text>
+        {value ? <Text style={styles.rowValue}>{value}</Text> : null}
         <Feather name={icon} size={18} color={profileColors.faint} />
     </TouchableOpacity>
 );
@@ -154,14 +153,14 @@ const Profile = ({ user, signOut, updateUsername }) => {
     const [emailCopied, setEmailCopied] = useState(false);
     const [draftName, setDraftName] = useState('');
     const [isSavingName, setIsSavingName] = useState(false);
-    const [showCalibrationQuiz, setShowCalibrationQuiz] = useState(false);
-    const [showVocabModal, setShowVocabModal] = useState(false);
+    const [showTargetLanguagePicker, setShowTargetLanguagePicker] = useState(false);
     const {
         interfaceLanguage,
         setInterfaceLanguage,
         targetLanguage,
-        targetLanguageLevel,
-        setTargetLanguageLevel,
+        setTargetLanguage,
+        chineseScript,
+        setChineseScript,
         isDarkMode,
         setIsDarkMode,
         notificationsEnabled,
@@ -251,6 +250,22 @@ const Profile = ({ user, signOut, updateUsername }) => {
 
         setInterfaceLanguage(language);
         setShowInterfaceLanguagePicker(false);
+    };
+
+    const activeTargetOptionId = getActiveTargetLanguageOptionId(targetLanguage, chineseScript);
+    const activeTargetOption = TARGET_LANGUAGE_OPTIONS.find((option) => option.id === activeTargetOptionId);
+
+    const handleTargetLanguageSelect = (option) => {
+        setShowTargetLanguagePicker(false);
+        if (option.id === activeTargetOptionId) {
+            return;
+        }
+        // Order matters: set the script first so the zh profile/runtime pick it up
+        // when the target language flips to 'zh'.
+        if (option.chineseScript) {
+            setChineseScript(option.chineseScript);
+        }
+        setTargetLanguage(option.targetLanguage);
     };
 
     const openAuthModal = (mode) => {
@@ -373,52 +388,18 @@ const Profile = ({ user, signOut, updateUsername }) => {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.groupEyebrow}>{t('profile.readingLevel')}</Text>
+                    <Text style={styles.groupEyebrow}>{t('profile.learningLanguage')}</Text>
                     <View style={styles.card}>
-                        {hasVocabSizeGrid(targetLanguage) ? (
-                            <>
-                                <Text style={styles.levelHelperText}>{t('profile.vocabLevelDesc')}</Text>
-                                <NavRow
-                                    label={t('profile.setVocabLevel')}
-                                    onPress={() => setShowVocabModal(true)}
-                                    icon="grid"
-                                    isLast
-                                    styles={styles}
-                                    profileColors={profileColors}
-                                />
-                            </>
-                        ) : (
-                            <>
-                                <View style={styles.levelChipsRow}>
-                                    {getProficiencyLevelOptions(targetLanguage).map((option) => {
-                                        const selected = option.rank === targetLanguageLevel?.rank;
-                                        return (
-                                            <Pressable
-                                                key={option.rank}
-                                                accessibilityRole="radio"
-                                                accessibilityState={{ selected }}
-                                                onPress={() => setTargetLanguageLevel(option.rank)}
-                                                style={[styles.levelChip, selected && styles.levelChipActive]}
-                                            >
-                                                <Text style={[styles.levelChipText, selected && styles.levelChipTextActive]}>
-                                                    {option.shortLabel}
-                                                </Text>
-                                            </Pressable>
-                                        );
-                                    })}
-                                </View>
-                                <Text style={styles.levelHelperText}>{t('profile.readingLevelDesc')}</Text>
-                                <NavRow
-                                    label={t('profile.checkMyLevel')}
-                                    onPress={() => setShowCalibrationQuiz(true)}
-                                    icon="compass"
-                                    isLast
-                                    styles={styles}
-                                    profileColors={profileColors}
-                                />
-                            </>
-                        )}
+                        <NavRow
+                            label={t('profile.learningLanguage')}
+                            value={activeTargetOption?.label}
+                            onPress={() => setShowTargetLanguagePicker(true)}
+                            isLast
+                            styles={styles}
+                            profileColors={profileColors}
+                        />
                     </View>
+                    <Text style={styles.levelHelperText}>{t('profile.learningLanguageDesc')}</Text>
                 </View>
 
                 <View style={styles.section}>
@@ -527,15 +508,57 @@ const Profile = ({ user, signOut, updateUsername }) => {
                 ) : null}
             </ScrollView>
 
-            <CalibrationQuizModal
-                visible={showCalibrationQuiz}
-                onClose={() => setShowCalibrationQuiz(false)}
-            />
+            <Modal
+                visible={showTargetLanguagePicker}
+                animationType="fade"
+                transparent
+                onRequestClose={() => setShowTargetLanguagePicker(false)}
+            >
+                <TouchableWithoutFeedback onPress={() => setShowTargetLanguagePicker(false)}>
+                    <View style={styles.modalBackdrop}>
+                        <TouchableWithoutFeedback>
+                            <View style={[styles.modalCard, styles.languageModalCard]}>
+                                <Text style={styles.modalTitle}>{t('profile.learningLanguage')}</Text>
+                                <View style={styles.languageOptions}>
+                                    {TARGET_LANGUAGE_OPTIONS.map((option) => {
+                                        const selected = option.id === activeTargetOptionId;
 
-            <VocabLevelModal
-                visible={showVocabModal}
-                onClose={() => setShowVocabModal(false)}
-            />
+                                        return (
+                                            <Pressable
+                                                key={option.id}
+                                                accessibilityRole="radio"
+                                                accessibilityState={{ selected }}
+                                                onPress={() => handleTargetLanguageSelect(option)}
+                                                style={[
+                                                    styles.languageOptionRow,
+                                                    selected && styles.languageOptionRowSelected,
+                                                ]}
+                                            >
+                                                <Feather
+                                                    name={selected ? 'check-circle' : 'circle'}
+                                                    size={18}
+                                                    color={selected ? profileColors.accent : profileColors.faint}
+                                                />
+                                                <Text
+                                                    style={[
+                                                        styles.languageOptionText,
+                                                        selected && styles.languageOptionTextSelected,
+                                                    ]}
+                                                >
+                                                    {option.label}
+                                                </Text>
+                                            </Pressable>
+                                        );
+                                    })}
+                                </View>
+                                <Text style={styles.languageDisclaimerText}>
+                                    {t('profile.learningLanguageDesc')}
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
 
             <Modal
                 visible={showInterfaceLanguagePicker}
@@ -972,6 +995,13 @@ const createStyles = (profileColors, themeColors) => StyleSheet.create({
         flex: 1,
         minWidth: 0,
     },
+    rowValue: {
+        fontFamily: fontFamilies.sansMedium,
+        fontSize: 15,
+        lineHeight: 21,
+        color: profileColors.sub,
+        marginRight: 8,
+    },
     rowDescription: {
         marginTop: 4,
         fontFamily: fontFamilies.sansRegular,
@@ -1239,31 +1269,6 @@ const createStyles = (profileColors, themeColors) => StyleSheet.create({
     },
     modalDangerButtonText: {
         color: profileColors.white,
-    },
-    levelChipsRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: spacing.xs,
-        paddingHorizontal: spacing.md,
-        paddingTop: spacing.md,
-    },
-    levelChip: {
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs,
-        borderRadius: radii.pill,
-        backgroundColor: profileColors.muted,
-    },
-    levelChipActive: {
-        backgroundColor: themeColors.inkSlate,
-    },
-    levelChipText: {
-        fontFamily: fontFamilies.medium,
-        fontSize: 13,
-        color: profileColors.sub,
-    },
-    levelChipTextActive: {
-        color: themeColors.white,
-        fontFamily: fontFamilies.semibold,
     },
     levelHelperText: {
         fontFamily: fontFamilies.regular,

@@ -684,6 +684,15 @@ class NativeEpubReaderView(
   private var suppressPageEvents = false
   private var focusSentences: List<FocusSentenceInfo> = emptyList()
   private var focusIndex = 0
+  // A single backward chapter entry drives several repaginations (the async
+  // adjacent-chapter prefetch re-emits the window, and a slow pagination can be
+  // cancelled and superseded). transitionDirection is consumed on the first
+  // repaginate, so the "land the beam on the last sentence" intent is parked
+  // here — keyed to the target spine — and honoured by the first focus-mode bind
+  // of that chapter, whichever repagination gets there. Without it, a later bind
+  // falls back to the stale, debounced restorePosition echo and drops the beam
+  // mid-chapter. Single-use: cleared as soon as a bind for that spine consumes it.
+  private var pendingFocusLandAtEndSpine: Int? = null
   private var focusSpanCount = 1
   private var focusSwipeEnabled = false
   private var lastFocusNavToken: String? = null
@@ -1095,6 +1104,21 @@ class NativeEpubReaderView(
     val themePaletteSnapshot = themePalette
     val renderModeSnapshot = readerRenderMode
     chapterTransitionDirection = "none"
+
+    // Park (or clear) the backward-entry intent here, synchronously, so it
+    // survives even if this pagination's background task is cancelled and
+    // superseded before applyPaginatedPages runs — and so a later repagination in
+    // the same transition (the async prefetch window refill, which no longer
+    // carries transitionDirection) still lands the beam on the chapter's last
+    // sentence. Only a chapter switch (resetToFirstPage) touches it; in-chapter
+    // rebinds (font, theme, prefetch refill) leave a parked intent intact.
+    if (resetToFirstPage) {
+      pendingFocusLandAtEndSpine = if (renderModeSnapshot == "focus" && transitionDirection == "previous") {
+        currentWindowItem(windowSnapshot)?.spineIndex
+      } else {
+        null
+      }
+    }
 
     paginationTask = paginationExecutor.submit {
       val startedAt = SystemClock.elapsedRealtime()
@@ -1727,7 +1751,14 @@ class NativeEpubReaderView(
     )
 
     if (focusEnabled) {
-      val preservedAnchor = if (resetScroll) null else focusSentences.getOrNull(focusIndex)
+      // Honour a parked backward-entry intent (set on an earlier repagination of
+      // this same transition) even when this particular bind wasn't itself flagged.
+      val landAtEnd = landFocusAtEnd ||
+        (page.spineIndex != null && pendingFocusLandAtEndSpine == page.spineIndex)
+      // When landing at the end, ignore any preserved anchor: the anchor and the
+      // debounced restorePosition echo both point at where the beam last sat,
+      // which is exactly what we're overriding.
+      val preservedAnchor = if (resetScroll || landAtEnd) null else focusSentences.getOrNull(focusIndex)
       rebuildFocusSentences(page, pagePaddingV + focusTopInset)
       focusIndex = when {
         focusSentences.isEmpty() -> 0
@@ -1738,8 +1769,14 @@ class NativeEpubReaderView(
         // Backward chapter entry: start the beam on the final span so a
         // down-swipe off the top of the next chapter returns to the previous
         // chapter's last sentence rather than its top.
-        landFocusAtEnd -> (focusSentences.size - focusSpanCount).coerceAtLeast(0)
+        landAtEnd -> (focusSentences.size - focusSpanCount).coerceAtLeast(0)
         else -> initialFocusIndexFromRestorePosition()
+      }
+      // The intent is single-use: once a bind for the target chapter has placed
+      // the beam, later in-chapter rebinds (font, theme, prefetch refill) must
+      // preserve position normally rather than snap back to the end.
+      if (page.spineIndex != null && pendingFocusLandAtEndSpine == page.spineIndex) {
+        pendingFocusLandAtEndSpine = null
       }
       continuousScrollView.swipeNavigationEnabled = focusSwipeEnabled
       applyFocusHighlightToView(animate = false)

@@ -1,5 +1,6 @@
 import { api } from './client';
 import { normalizeBookLanguage, normalizeInterfaceLanguageCode } from '../../constants/languages';
+import { getRuntimeChineseScript } from '../interfaceLanguage';
 
 const emptyChapterResult = {
   results: [],
@@ -17,7 +18,7 @@ const preprocessChapter = async ({
   text,
   language = 'ko',
   interfaceLanguage = 'en',
-  script = 'zh-Hans',
+  script = getRuntimeChineseScript(),
 }) => {
   const targetLanguage = normalizeBookLanguage(language);
   const normalizedInterfaceLanguage = normalizeInterfaceLanguageCode(interfaceLanguage);

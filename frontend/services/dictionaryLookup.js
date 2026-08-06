@@ -15,7 +15,11 @@ import {
 import { LOOKUP_LEARNING_RATE } from './abilityModel';
 import stemWord from './api/stemWord';
 import { getActiveOwnerId } from './localOwnerCoordinator';
-import { getRuntimeInterfaceLanguage, getRuntimeTargetLanguage } from './interfaceLanguage';
+import {
+  getRuntimeChineseScript,
+  getRuntimeInterfaceLanguage,
+  getRuntimeTargetLanguage,
+} from './interfaceLanguage';
 import { requestUserDataSync } from './userDataSyncQueue';
 import { normalizeBookLanguage, normalizeInterfaceLanguageCode } from '../constants/languages';
 import { translate } from '../i18n/translations';
@@ -216,7 +220,7 @@ const fetchLiveDictionary = async (
     stems,
     interfaceLanguage = getRuntimeInterfaceLanguage(),
     targetLanguage = getRuntimeTargetLanguage(),
-    script = 'zh-Hans'
+    script = getRuntimeChineseScript()
 ) => {
     if (!stems.length) {
         return [];
@@ -283,7 +287,7 @@ const fetchAndCacheLiveDictionary = async ({
     cacheScope,
     interfaceLanguage = getRuntimeInterfaceLanguage(),
     targetLanguage = getRuntimeTargetLanguage(),
-    script = 'zh-Hans',
+    script = getRuntimeChineseScript(),
 }) => {
     const uniqueStems = uniqueValues(stems);
     if (uniqueStems.length === 0) {
@@ -315,7 +319,7 @@ export const resolveDictionaryLookup = async ({
     fetchLive = true,
     allowRemoteStemming = true,
     fallbackToSurfaceForKorean = false,
-    script = 'zh-Hans',
+    script = getRuntimeChineseScript(),
 }) => {
     const rawSurface = cleanValue(surface);
     const normalizedTargetLanguage = normalizeBookLanguage(targetLanguage);

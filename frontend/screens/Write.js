@@ -44,6 +44,10 @@ import {
 } from '../services/localOwnerCoordinator';
 import { colors, fontFamilies, radii, spacing, textStyles, useTheme } from '../theme';
 import { useAppContext } from '../contexts/AppContext';
+import {
+  SUPPORTED_BOOK_LANGUAGES,
+  normalizeBookLanguage,
+} from '../constants/languages';
 import { assessEntry } from '../services/api/assessEntry';
 
 const LEGACY_STORAGE_KEY = 'writing_entries_v1';
@@ -238,6 +242,9 @@ const makeEmptyDraft = () => ({
   body: '',
   prompt: '',
   category: null,
+  // null = "follow the learner's current target language"; the editor resolves it
+  // and the language picker can override it per entry.
+  language: null,
   date: null,
   createdAt: null,
   updatedAt: null,
@@ -364,6 +371,7 @@ const normalizeEntry = (entry = {}, index = 0) => {
     body,
     prompt: entry.prompt ?? '',
     category,
+    language: normalizeBookLanguage(entry.language, null),
     date,
     createdAt: entry.createdAt ?? date,
     updatedAt: entry.updatedAt ?? date,
@@ -1098,6 +1106,20 @@ const Write = ({ user, navigation }) => {
     : [];
   const canSave = draft.title.trim().length > 0 || draft.body.trim().length > 0;
 
+  // The language this entry is written (and assessed) in. Defaults to the
+  // learner's target language; the picker below can override it per entry.
+  const entryLanguage = normalizeBookLanguage(draft.language ?? targetLanguage);
+  const writeLanguageOptions = SUPPORTED_BOOK_LANGUAGES.map((code) => ({
+    code,
+    label: t(`language.${code}`),
+  }));
+  const bodyPlaceholder = t(entryLanguage === 'zh' ? 'write.startZh' : 'write.startKorean');
+  const selectedEntryPlaceholder = t(
+    normalizeBookLanguage(selectedEntry?.language ?? targetLanguage) === 'zh'
+      ? 'write.startZh'
+      : 'write.startKorean'
+  );
+
   const openNewDraft = () => {
     setDraft({ ...makeEmptyDraft(), prompt: EDITOR_PROMPTS.reflective?.[0] ?? '' });
     setSelectedEntryId(null);
@@ -1190,6 +1212,7 @@ const Write = ({ user, navigation }) => {
       body: draft.body,
       prompt: draft.prompt,
       category: activeEditorType,
+      language: draft.language ?? targetLanguage,
       date: draft.date ?? now,
       createdAt: draft.createdAt ?? now,
       updatedAt: now,
@@ -1240,7 +1263,7 @@ const Write = ({ user, navigation }) => {
       const assessment = await assessEntry({
         body: submittedEntry.body,
         category: activeEditorType,
-        language: targetLanguage ?? 'ko',
+        language: submittedEntry.language ?? targetLanguage ?? 'ko',
         prompt: submittedEntry.prompt,
         sandboxWords: [],
       });
@@ -1483,7 +1506,7 @@ const Write = ({ user, navigation }) => {
             {selectedEntryAnnotations.length > 0 ? (
               <>
                 <AnnotatedEntry
-                  text={selectedEntry.body || t('write.startKorean')}
+                  text={selectedEntry.body || selectedEntryPlaceholder}
                   annotations={selectedEntryAnnotations}
                   onAnnotationPress={setSelectedAnnotation}
                   style={[
@@ -1508,7 +1531,7 @@ const Write = ({ user, navigation }) => {
                   selectedEntry.formatting?.underline && styles.formattedBodyUnderline,
                 ]}
               >
-                {selectedEntry.body || t('write.startKorean')}
+                {selectedEntry.body || selectedEntryPlaceholder}
               </Text>
             )}
 
@@ -1610,6 +1633,30 @@ const Write = ({ user, navigation }) => {
           ) : null}
 
           <View style={styles.editorWritingPanel}>
+            {writeLanguageOptions.length > 1 ? (
+              <View style={styles.writeLanguageRow}>
+                <Text style={styles.writeLanguageLabel}>{t('write.languageLabel')}</Text>
+                <View style={styles.writeLanguageChips}>
+                  {writeLanguageOptions.map((option) => {
+                    const selected = option.code === entryLanguage;
+                    return (
+                      <TouchableOpacity
+                        key={option.code}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected }}
+                        onPress={() => updateDraft({ language: option.code })}
+                        style={[styles.writeLanguageChip, selected && styles.writeLanguageChipActive]}
+                      >
+                        <Text style={[styles.writeLanguageChipText, selected && styles.writeLanguageChipTextActive]}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+
             <FormattingToolbar formatting={draft.formatting} onToggle={toggleDraftFormatting} />
 
             <TextInput
@@ -1626,7 +1673,7 @@ const Write = ({ user, navigation }) => {
             <TextInput
               value={draft.body}
               onChangeText={(body) => updateDraft({ body })}
-              placeholder={t('write.startKorean')}
+              placeholder={bodyPlaceholder}
               placeholderTextColor={colors.textSubtle}
               multiline
               textAlignVertical="top"
@@ -2167,6 +2214,42 @@ const createStyles = (colors) => StyleSheet.create({
     borderWidth: 0,
     backgroundColor: colors.bgPage,
     overflow: 'hidden',
+  },
+  writeLanguageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  writeLanguageLabel: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginRight: 10,
+  },
+  writeLanguageChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  writeLanguageChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.pill ?? 999,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    backgroundColor: colors.bgPage,
+  },
+  writeLanguageChipActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft ?? colors.surfaceMuted,
+  },
+  writeLanguageChipText: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  writeLanguageChipTextActive: {
+    color: colors.accent,
   },
   editorToolbar: {
     minHeight: 0,

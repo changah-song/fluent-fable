@@ -1551,9 +1551,9 @@ const FeaturedBookCarousel = ({ books, screenWidth, onResumeBook, onPressBook })
 
 const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpen, navigation, user }) => {
     const { t } = useTranslation();
-    const { languageSettingsReady, targetLanguage, switchProfile, activeProfileId } = useAppContext();
+    const { languageSettingsReady, targetLanguage, setTargetLanguage, switchProfile, activeProfileId } = useAppContext();
     const { activeOwnerId, syncPaused, syncGeneration } = useLocalOwner();
-    const { colors: themeColors } = useTheme();
+    const { colors: themeColors, isDarkMode } = useTheme();
     const colors = themeColors;
     const safeAreaInsets = useSafeAreaInsets();
     const HOME_COLORS = useMemo(() => createHomeColors(colors), [colors]);
@@ -1645,6 +1645,7 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
         ownerId: activeOwnerId,
         syncGeneration,
         targetLanguage,
+        setTargetLanguage,
     });
 
     const languageFilteredBooks = useMemo(() => (
@@ -3703,7 +3704,10 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
                         ) : (
                             <Image
                                 source={OCR_ICON_SOURCE}
-                                style={styles.ocrIconImage}
+                                style={[
+                                    styles.ocrIconImage,
+                                    isDarkMode && { tintColor: HOME_COLORS.text },
+                                ]}
                                 resizeMode="contain"
                             />
                         )}

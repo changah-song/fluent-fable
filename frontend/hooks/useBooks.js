@@ -8,7 +8,7 @@ import { uploadUserBook } from '../services/bookCloudSync';
 import { readEpubMetadata } from '../services/epubMetadata';
 import { isCurrentSyncGeneration } from '../services/localOwnerCoordinator';
 import { readPdfMetadata, renderPdfCover } from '../services/pdfMetadata';
-import { getLanguageLabel, normalizeBookLanguage } from '../constants/languages';
+import { SUPPORTED_BOOK_LANGUAGES, getLanguageLabel, normalizeBookLanguage } from '../constants/languages';
 import { useTranslation } from './useTranslation';
 
 const createBookId = () => {
@@ -28,6 +28,7 @@ const useBooks = ({
     ownerId,
     syncGeneration,
     targetLanguage = 'ko',
+    setTargetLanguage = () => {},
 }) => {
     const [isImporting, setIsImporting] = useState(false);
     const [openingBookUri, setOpeningBookUri] = useState(null);
@@ -180,14 +181,25 @@ const useBooks = ({
                 ? await readPdfMetadata(uri, fallbackName)
                 : await readEpubMetadata(uri, fallbackName);
             const { title, author, language, wordCount } = metadata;
-            const detectedLanguage = normalizeBookLanguage(language ?? 'ko');
-            if (detectedLanguage !== activeTargetLanguage) {
+            // Book-driven import: keep the book's own language when we can read it.
+            // metadata.language is already ko/zh/en or null (unknown / untagged, e.g.
+            // most PDFs) — fall back to the learner's current target for untagged books.
+            const taggedLanguage = normalizeBookLanguage(language, null);
+            const detectedLanguage = taggedLanguage ?? activeTargetLanguage;
+            if (!SUPPORTED_BOOK_LANGUAGES.includes(detectedLanguage)) {
                 Alert.alert(
-                    t('books.languageMismatchTitle'),
-                    t('books.languageMismatchBody', { language: localizedLanguageName(detectedLanguage) })
+                    t('books.languageUnsupportedTitle'),
+                    t('books.languageUnsupportedBody', { language: localizedLanguageName(detectedLanguage) })
                 );
                 setIsImporting(false);
                 return;
+            }
+
+            // Importing a book in another supported language moves the learner into
+            // that language, so the shelf (filtered by target language) shows it and
+            // the per-language level/profile context matches what they're reading.
+            if (detectedLanguage !== activeTargetLanguage) {
+                setTargetLanguage(detectedLanguage);
             }
             let cover = metadata.cover;
             let pdfCoverPageNumber = null;

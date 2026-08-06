@@ -842,13 +842,17 @@ export const estimateBookReadingEase = async ({
 };
 
 /**
- * ensureProfileAbilitySeed — seed `theta_0` from the self-reported proficiency
- * rank for a cold profile.
+ * ensureProfileAbilitySeed — give a cold profile a non-null ability row.
+ *
+ * The app no longer asks the reader to self-report a level: a cold profile seeds
+ * at a NEUTRAL theta (0) with `self_report_rank = NULL` (no self-report spring),
+ * and ability is learned from reading — lookups / reviews / exposure move theta
+ * from there (Phase 3). A `rank` may still be passed (legacy / tests) to seed
+ * from a band instead.
  *
  * Idempotent and safe to call on every app load: it only writes while the profile
- * is still cold (`event_count = 0`). Once behavior has moved theta (Phase 3), the
- * seed never clobbers it. Re-seeding a cold profile from the same rank is a no-op
- * value-wise; changing the reported level before any behavior updates the seed.
+ * is still cold (`event_count = 0`). Once behavior has moved theta, the seed never
+ * clobbers it.
  *
  * @returns {Promise<number>} the seeded (or existing) theta.
  */
@@ -861,8 +865,9 @@ export const ensureProfileAbilitySeed = ({
   const scopedOwnerId = resolveOwnerId(ownerId);
   const normalizedLanguage = normalizeBookLanguage(language) || 'ko';
   const scopedProfileId = resolveProfileId(profileId, normalizedLanguage);
-  const normalizedRank = Number.isFinite(Number(rank)) ? Math.round(Number(rank)) : 1;
-  const theta = seedThetaFromRank(normalizedLanguage, normalizedRank);
+  const hasRank = Number.isFinite(Number(rank));
+  const normalizedRank = hasRank ? Math.round(Number(rank)) : null;
+  const theta = hasRank ? seedThetaFromRank(normalizedLanguage, normalizedRank) : 0;
   const now = new Date().toISOString();
 
   return new Promise((resolve, reject) => {

@@ -1,6 +1,14 @@
 export const SUPPORTED_LANGUAGES = {
   ko: 'Korean',
+  zh: 'Chinese',
 };
+
+// Book/reading languages the app can actually open and look up words for today.
+// A book whose language falls outside this set can't be imported yet. Keep in
+// sync with the dictionaries that ship on the backend (ko_dict / zh_dict).
+export const SUPPORTED_BOOK_LANGUAGES = ['ko', 'zh'];
+
+export const DEFAULT_CHINESE_SCRIPT = 'zh-Hans';
 
 export const KRDICT_INTERFACE_LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English' },
@@ -47,6 +55,10 @@ export const DEFAULT_LANGUAGE_SETTINGS = {
   targetLanguage: DEFAULT_TARGET_LANGUAGE,
   nativeLanguage: 'en',
   interfaceLanguage: DEFAULT_INTERFACE_LANGUAGE,
+  // Which Han script the learner reads Chinese in. Purely a display/lookup
+  // preference — the dictionary indexes both Simplified and Traditional, so this
+  // only decides which headword form is shown, not whether a word is found.
+  chineseScript: DEFAULT_CHINESE_SCRIPT,
 };
 
 export const normalizeLanguageCode = (code, fallback = DEFAULT_TARGET_LANGUAGE) => {
@@ -94,6 +106,24 @@ export const normalizeBookLanguage = (value, fallback = DEFAULT_TARGET_LANGUAGE)
 };
 
 export const isKoreanLanguage = (language) => normalizeBookLanguage(language) === 'ko';
+
+// Options shown in the "learning language" picker. Chinese appears twice —
+// Simplified and Traditional — but both are the same target language ('zh'); they
+// differ only in `chineseScript`, the preferred display script.
+export const TARGET_LANGUAGE_OPTIONS = [
+  { id: 'ko', targetLanguage: 'ko', label: '한국어' },
+  { id: 'zh-Hans', targetLanguage: 'zh', chineseScript: 'zh-Hans', label: '简体中文' },
+  { id: 'zh-Hant', targetLanguage: 'zh', chineseScript: 'zh-Hant', label: '繁體中文' },
+];
+
+// Which picker row is currently active, given the stored target language + script.
+export const getActiveTargetLanguageOptionId = (targetLanguage, chineseScript) => {
+  const normalizedTarget = normalizeLanguageCode(targetLanguage);
+  if (normalizedTarget !== 'zh') {
+    return normalizedTarget;
+  }
+  return normalizeChineseScript(chineseScript) === 'zh-Hant' ? 'zh-Hant' : 'zh-Hans';
+};
 
 export const getLanguageLabel = (code) => (
   SUPPORTED_LANGUAGES[normalizeLanguageCode(code)] ?? SUPPORTED_LANGUAGES[DEFAULT_TARGET_LANGUAGE]

@@ -68,15 +68,17 @@ import {
 } from '../services/preferencesCloudSync';
 import { isCurrentSyncGeneration } from '../services/localOwnerCoordinator';
 import { requestUserDataSync } from '../services/userDataSyncQueue';
-import { normalizeBookLanguage, normalizeInterfaceLanguageCode } from '../constants/languages';
-import { getProficiencyLevelForLanguage } from '../constants/proficiencyLevels';
+import {
+    SUPPORTED_BOOK_LANGUAGES,
+    normalizeBookLanguage,
+    normalizeInterfaceLanguageCode,
+} from '../constants/languages';
 import {
     difficultyFromLevelRank,
     exposureDwellIsPlausible,
     levelUnderlineWeight,
     lowestUnderlinedRank,
     pKnown,
-    seedThetaFromRank,
 } from '../services/abilityModel';
 import { createNativeReaderThemeTokens, radii, spacing, textStyles, useTheme } from '../theme';
 
@@ -577,7 +579,7 @@ const Read = ({
     route,
 }) => {
     const { t, language: interfaceLanguage } = useTranslation();
-    const { targetLanguage, levelsByLanguage, isDarkMode, setIsDarkMode } = useAppContext();
+    const { targetLanguage, isDarkMode, setIsDarkMode } = useAppContext();
     const { colors: themeColors } = useTheme();
     const styles = useMemo(() => createStyles(themeColors), [themeColors]);
     const nativeReaderThemeTokens = useMemo(
@@ -695,12 +697,6 @@ const Read = ({
     const nativeReaderPackageRef = useRef(null);
     const nativeRestorePositionRef = useRef(null);
     const currentSpineIndexRef = useRef(null);
-    // Read only as a cold-start fallback inside the level-underline effect. Held in
-    // a ref so changing the picked level mid-book doesn't re-shade the page out
-    // from under the reader — it lands at the next chapter, like every other
-    // underline change.
-    const levelsByLanguageRef = useRef(levelsByLanguage);
-    levelsByLanguageRef.current = levelsByLanguage;
     // Surfaces looked up recently, to exclude from exposure crediting: a lookup is
     // its own (stronger, negative) evidence, so the same word must not also be
     // credited as a skip. Cleared each time native closes an exposure unit.
@@ -731,7 +727,12 @@ const Read = ({
     }, []);
     const selectedBook = books.find(book => book.uri === selectedCurrentBook) ?? null;
     const selectedBookLanguage = normalizeBookLanguage(selectedBook?.language ?? 'ko');
-    const activeBook = selectedBook && selectedBookLanguage === targetLanguage ? selectedBook : null;
+    // Book-driven: any book in a language we can look up opens with *its own*
+    // dictionary, regardless of the learner's current target language. The
+    // dictionary/segmentation/level pipeline is keyed on activeBookLanguage below.
+    const activeBook = selectedBook && SUPPORTED_BOOK_LANGUAGES.includes(selectedBookLanguage)
+        ? selectedBook
+        : null;
     const currentBook = activeBook?.uri ?? null;
     const activeBookLanguage = activeBook ? selectedBookLanguage : targetLanguage;
     const shouldUseHeuristicHighlights = !activeBook?.preprocessed;
@@ -867,19 +868,11 @@ const Read = ({
                 language: activeBookLanguage,
             });
 
-            // No behavioral history yet → fall back to the self-reported band as a
-            // cold-start seed, exactly as updateThetaFromOutcome would have.
+            // No behavioral history yet → start from a neutral ability estimate
+            // and let reading move it. (Level is no longer self-reported.)
             let theta = Number(ability?.theta);
             if (!Number.isFinite(theta)) {
-                const selectedLevel = getProficiencyLevelForLanguage(
-                    activeBookLanguage,
-                    levelsByLanguageRef.current
-                );
-                const userRank = Number(selectedLevel?.rank);
-                if (!Number.isFinite(userRank)) {
-                    return [];
-                }
-                theta = seedThetaFromRank(activeBookLanguage, userRank);
+                theta = 0;
             }
 
             // Prune SQL-side to the bands that can actually earn an underline at
