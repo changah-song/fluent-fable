@@ -10,13 +10,28 @@ Reading is the fastest way to acquire a language. Noeul removes the friction tha
 
 [![Website](https://img.shields.io/badge/Website-noeul.app-2d6cdf?logo=safari&logoColor=white)](https://noeul.app/)
 &nbsp;
-[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Download-414141?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.noeulapp.Noeul)
+[![Download APK](https://img.shields.io/badge/Download-Android_APK-3ddc84?logo=android&logoColor=white)](https://github.com/changah-song/noeul/releases/latest)
+&nbsp;
+![Google Play — Coming Soon](https://img.shields.io/badge/Google_Play-Coming_Soon-414141?logo=google-play&logoColor=white)
 &nbsp;
 ![Built with Expo](https://img.shields.io/badge/built_with-React_Native%20%2F%20Expo-000020?logo=expo&logoColor=white)
 
 See it in action at **[noeul.app](https://noeul.app/)**.
 
 </div>
+
+---
+
+## Download
+
+**Android:** grab the latest APK from the **[Releases page](https://github.com/changah-song/noeul/releases/latest)** and install it on your phone.
+
+1. Download `noeul-vX.Y.Z.apk` from the newest release.
+2. Open it — Android will warn about "install from unknown sources"; tap **Settings → Allow from this source**, then **Install**. (Normal for any app not from the Play Store.)
+3. Requires **Android 6.0+** and Google Play Services (for sign-in).
+
+**Google Play:** coming soon.
+**iOS:** not yet available.
 
 ---
 

@@ -15,6 +15,9 @@ import DictionaryContent from './DictionaryContent';
 
 const DICTIONARY_COMPACT_HEIGHT = 252;
 const DICTIONARY_NO_ROOT_HEIGHT = 215;
+// Chinese has no related-roots handle, but it does pack multiple readings + numbered
+// senses inline, so it gets a taller compact ceiling to show them at a glance.
+const DICTIONARY_ZH_HEIGHT = 316;
 const DICTIONARY_TRANSLATION_HEIGHT = 332;
 const DICTIONARY_EXPLAIN_HEIGHT = 360;
 const DICTIONARY_EXPANDED_MAX_HEIGHT = 548;
@@ -228,7 +231,13 @@ const TopSection = ({
     // content never grows past the fixed ceiling below. `compactChrome` is the
     // non-scrolling height around the definition (handle + action row + padding),
     // which varies with placement and whether the roots handle is shown.
-    const compactCeiling = canExpandLookup ? DICTIONARY_COMPACT_HEIGHT : DICTIONARY_NO_ROOT_HEIGHT;
+    const dictionaryBookLanguage = normalizeBookLanguage(
+        sourceBook?.language ?? activeTargetLanguage ?? 'ko'
+    );
+    const isChineseDictionarySheet = dictionaryBookLanguage === 'zh';
+    const compactCeiling = isChineseDictionarySheet
+        ? DICTIONARY_ZH_HEIGHT
+        : (canExpandLookup ? DICTIONARY_COMPACT_HEIGHT : DICTIONARY_NO_ROOT_HEIGHT);
     const compactChrome = isTopPlacement
         ? (canExpandLookup ? 124 : 104)
         : (canExpandLookup ? 132 : 112);
@@ -248,9 +257,7 @@ const TopSection = ({
         )
         : compactHeight;
     const translationText = translationTarget || visibleWord;
-    const translationSourceLanguage = normalizeBookLanguage(
-        sourceBook?.language ?? activeTargetLanguage ?? 'ko'
-    );
+    const translationSourceLanguage = dictionaryBookLanguage;
     const translationTargetLanguage = normalizeInterfaceLanguageCode(interfaceLanguage);
     const translationSourceLabel = getInterfaceLanguageLabel(translationSourceLanguage);
     const translationTargetLabel = getInterfaceLanguageLabel(translationTargetLanguage);

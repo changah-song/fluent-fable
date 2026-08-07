@@ -2475,6 +2475,117 @@ def zh_dictionary_row_to_result(
     }
 
 
+# A CC-CEDICT sense that only points at another headword, e.g.
+# "variant of 為|为[wei2]", "old variant of 五[wu3]", "see 某人[mou3 ren2]".
+# The reference is written Traditional|Simplified; we capture the token and prefer
+# the Simplified side when resolving.
+ZH_VARIANT_SENSE_RE = re.compile(
+    r"^(?:[a-z]+ )*variant of ([^\[\s;,()]+)|^see(?: also)? ([^\[\s;,()]+)",
+    re.IGNORECASE,
+)
+
+
+def _zh_is_cjk_char(char: str) -> bool:
+    return bool(char) and (
+        "㐀" <= char <= "䶿"
+        or "一" <= char <= "鿿"
+        or "豈" <= char <= "﫿"
+    )
+
+
+def _zh_variant_reference(sense: str) -> str | None:
+    """The referenced headword if `sense` is just a variant/see pointer, else None."""
+    match = ZH_VARIANT_SENSE_RE.match((sense or "").strip())
+    if not match:
+        return None
+    token = (match.group(1) or match.group(2) or "").strip()
+    if not token:
+        return None
+    if "|" in token:  # Traditional|Simplified — resolve against the Simplified form.
+        token = token.split("|")[-1].strip()
+    return token or None
+
+
+def enrich_zh_entries(entry_lists: list[list[dict]]) -> None:
+    """In place: inline the definition behind a "variant of" pointer, and backfill a
+    per-character pinyin when a multi-character entry is missing syllables (#1, #4)."""
+    if not is_zh_dict_db_installed():
+        return
+
+    flat = [entry for group in entry_lists for entry in group]
+    ref_words: set[str] = set()
+    char_needs: set[str] = set()
+    for entry in flat:
+        definition = entry.get("definition") or ""
+        for sense in definition.split("; "):
+            reference = _zh_variant_reference(sense)
+            if reference:
+                ref_words.add(reference)
+        word = entry.get("word") or ""
+        pinyin = entry.get("pinyin") or ""
+        cjk_chars = [char for char in word if _zh_is_cjk_char(char)]
+        if len(cjk_chars) > 1 and len(pinyin.split()) < len(cjk_chars):
+            char_needs.update(cjk_chars)
+
+    needed = ref_words | char_needs
+    if not needed:
+        return
+
+    # One batched read for every reference + single character we might substitute.
+    resolved: dict[str, dict] = {}
+    conn = get_zh_dict_db_connection()
+    try:
+        needed_list = list(needed)
+        placeholders = ",".join(["?"] * len(needed_list))
+        rows = conn.execute(
+            f"""
+            SELECT simplified, traditional, pinyin, definition
+            FROM zh_dictionary
+            WHERE simplified IN ({placeholders})
+               OR traditional IN ({placeholders})
+            ORDER BY frequency_rank ASC, id ASC
+            """,
+            [*needed_list, *needed_list],
+        ).fetchall()
+    finally:
+        conn.close()
+
+    for row in rows:
+        for key in ((row["simplified"] or "").strip(), (row["traditional"] or "").strip()):
+            if key and key not in resolved:  # first row wins = most frequent reading
+                resolved[key] = {
+                    "pinyin": (row["pinyin"] or "").strip(),
+                    "definition": (row["definition"] or "").strip(),
+                }
+
+    for entry in flat:
+        definition = entry.get("definition") or ""
+        if definition:
+            rebuilt = []
+            for sense in definition.split("; "):
+                reference = _zh_variant_reference(sense)
+                target = resolved.get(reference) if reference else None
+                if target and target.get("definition"):
+                    rebuilt.append(f"variant of {reference}: {target['definition']}")
+                else:
+                    rebuilt.append(sense)
+            entry["definition"] = "; ".join(rebuilt)
+            entry["gloss"] = zh_definition_gloss(entry["definition"])
+
+        word = entry.get("word") or ""
+        pinyin = entry.get("pinyin") or ""
+        cjk_chars = [char for char in word if _zh_is_cjk_char(char)]
+        if len(cjk_chars) > 1 and len(pinyin.split()) < len(cjk_chars):
+            syllables = [
+                (resolved.get(char) or {}).get("pinyin", "").split()[0:1]
+                for char in cjk_chars
+            ]
+            if all(syllables):
+                composed = " ".join(part[0] for part in syllables)
+                entry["pinyin"] = composed
+                entry["ipa"] = composed
+
+
 def lookup_zh_dictionary_entries(
     stems: list[str],
     *,
@@ -2561,6 +2672,7 @@ def lookup_zh_dictionary_entries(
             for row in stem_rows
         ])
 
+    enrich_zh_entries(results)
     return results, found_count
 
 

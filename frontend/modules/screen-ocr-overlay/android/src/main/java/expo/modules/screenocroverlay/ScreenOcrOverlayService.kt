@@ -589,6 +589,7 @@ class ScreenOcrOverlayService : Service() {
         context = applicationContext,
         resultCode = resultCode,
         data = data,
+        language = targetLanguage,
         onStopped = ::handleProjectionStopped
       )
       emitStatus("screen_capture_started")
@@ -1204,6 +1205,15 @@ class ScreenOcrOverlayService : Service() {
     private const val NOTIFICATION_ID = 8742
     @Volatile
     private var activeInstance: ScreenOcrOverlayService? = null
+
+    // The learner's target language (mirrors the Profile page), pushed from JS and
+    // read when a capture session starts to pick the matching OCR recognizer.
+    @Volatile
+    private var targetLanguage: String? = null
+
+    fun setTargetLanguage(language: String?) {
+      targetLanguage = language
+    }
 
     fun getActiveInstance(): ScreenOcrOverlayService? = activeInstance
 

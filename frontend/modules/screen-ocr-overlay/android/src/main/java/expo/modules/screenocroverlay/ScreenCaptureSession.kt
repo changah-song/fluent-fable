@@ -22,8 +22,6 @@ import android.util.Log
 import android.view.WindowManager
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
@@ -39,11 +37,14 @@ class ScreenCaptureSession(
   private val context: Context,
   resultCode: Int,
   data: Intent,
+  language: String?,
   private val onStopped: () -> Unit
 ) {
   private val captureLock = Any()
   private val mainHandler = Handler(Looper.getMainLooper())
-  private val recognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
+  // The recognizer script matches the profile target language captured at session
+  // start; switching languages while the overlay is live needs a widget restart.
+  private val recognizer = OcrRecognizers.create(language)
   private val projection: MediaProjection
   private var imageReader: ImageReader
   private var virtualDisplay: VirtualDisplay

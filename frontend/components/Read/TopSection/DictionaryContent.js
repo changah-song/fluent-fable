@@ -22,6 +22,7 @@ import LookupLoadingSkeleton from './LookupLoadingSkeleton';
 import { normalizeBookLanguage, normalizeInterfaceLanguageCode } from '../../../constants/languages';
 import { fontFamilies, radii, spacing, textStyles, useTheme } from '../../../theme';
 import { playEnglishPronunciation } from '../../../services/pronunciationAudio';
+import { getRuntimeChineseScript } from '../../../services/interfaceLanguage';
 import { requestUserDataSync } from '../../../services/userDataSyncQueue';
 import {
     normalizeSurfaceWordForLanguage,
@@ -89,6 +90,56 @@ const getEntryPos = (entry) => cleanValue(entry?.pos);
 const getEntryRomanization = (entry) => cleanValue(entry?.romanization);
 const getEntryIpa = (entry) => cleanValue(entry?.ipa);
 const getEntryPinyin = (entry) => cleanValue(entry?.pinyin) || getEntryIpa(entry);
+
+// CC-CEDICT packs a reading's senses into one string joined by "; ". Split them so
+// the panel can number multiple meanings.
+const splitZhSenses = (definition) => cleanValue(definition)
+    .split(/\s*;\s*/)
+    .map((sense) => sense.trim())
+    .filter(Boolean);
+
+// A sense that only points at another headword — "variant of 為|为[wei2]",
+// "old variant of 五[wu3]", "see also 某人[…]" — carries no meaning of its own. Returns
+// the referenced word (Simplified side when written Traditional|Simplified), else null.
+const ZH_VARIANT_SENSE_RE = /^(?:[a-z]+ )*variant of ([^[\s;,()]+)|^see(?: also)? ([^[\s;,()]+)/i;
+const getZhVariantReference = (sense) => {
+    const match = ZH_VARIANT_SENSE_RE.exec(cleanValue(sense));
+    if (!match) {
+        return null;
+    }
+    let token = (match[1] || match[2] || '').trim();
+    if (token.includes('|')) {
+        token = token.split('|').pop().trim();
+    }
+    return token || null;
+};
+
+// Heteronyms come back as separate entries that share the same word but differ by
+// pinyin. Dedupe by pinyin+definition (not word, which would collapse them all) and
+// keep only readings that actually carry a definition.
+const dedupeZhReadings = (entries) => {
+    const seen = new Set();
+    const readings = [];
+    (entries || []).forEach((entry) => {
+        const pinyin = getEntryPinyin(entry);
+        const definition = getEntryDefinition(entry);
+        if (!definition) {
+            return;
+        }
+        const key = `${pinyin.toLowerCase()}|${definition.toLowerCase()}`;
+        if (seen.has(key)) {
+            return;
+        }
+        seen.add(key);
+        readings.push({
+            word: cleanValue(entry?.word) || cleanValue(entry?.stem),
+            pinyin,
+            definition,
+            senses: splitZhSenses(definition),
+        });
+    });
+    return readings;
+};
 const getEntryEtymology = (entry) => cleanValue(entry?.etymology);
 const getEntryAudioUs = (entry) => cleanValue(entry?.audio_us ?? entry?.audioUs);
 const getEntryAudioUk = (entry) => cleanValue(entry?.audio_uk ?? entry?.audioUk);
@@ -472,6 +523,13 @@ const DictionaryContent = ({
     const [isLiveLoading, setIsLiveLoading] = useState(false);
     const [liveError, setLiveError] = useState(null);
     const [extraDefs, setExtraDefs] = useState({});
+    // All Chinese readings (heteronyms) for a tapped word, keyed by word:
+    // 'loading' | Array<{ word, pinyin, definition }>. Fetched eagerly (not only on
+    // expand) so the panel can lay out every pronunciation + sense at a glance.
+    const [zhReadings, setZhReadings] = useState({});
+    // Words we've already kicked off a /zh_dict_search/ for, so the eager + variant
+    // effects never double-fetch. Cleared when the tapped word changes.
+    const zhReadingsFetchRef = useRef(new Set());
     const [liveEntryMeta, setLiveEntryMeta] = useState({});
     const [romanizations, setRomanizations] = useState({});
     const romanizationsRef = useRef({});
@@ -530,6 +588,8 @@ const DictionaryContent = ({
         setLiveError(null);
         setIsLiveLoading(false);
         setExtraDefs({});
+        setZhReadings({});
+        zhReadingsFetchRef.current = new Set();
         setLiveEntryMeta({});
         romanizationsRef.current = {};
         setRomanizations({});
@@ -884,6 +944,62 @@ const DictionaryContent = ({
         prefetchExtra(entry.stem);
         setExpandedCached(prev => ({ ...prev, [entry.stem]: true }));
     }, [activeLookupItem, extraDefs, isPanelExpanded]);
+
+    // Fetch every reading of a Chinese word from /zh_dict_search/ (the cache only
+    // holds the top one) into zhReadings, once per word.
+    const fetchZhReadings = (rawWord) => {
+        const word = cleanValue(rawWord);
+        if (!word || zhReadingsFetchRef.current.has(word)) {
+            return;
+        }
+        zhReadingsFetchRef.current.add(word);
+        setZhReadings((prev) => ({ ...prev, [word]: 'loading' }));
+        api.get('/zh_dict_search/', {
+            params: {
+                stem: word,
+                interface_language: interfaceLanguage,
+                script: getRuntimeChineseScript(),
+            },
+            timeout: 10000,
+        })
+            .then((response) => setZhReadings((prev) => ({ ...prev, [word]: response.data?.results ?? [] })))
+            .catch(() => setZhReadings((prev) => ({ ...prev, [word]: [] })));
+    };
+
+    // Chinese: eagerly load the tapped word's readings so the panel shows every
+    // pronunciation + numbered senses at a glance, no expand needed.
+    useEffect(() => {
+        if (!isChineseBook) {
+            return;
+        }
+        const entry = activeLookupItem?.cachedEntry;
+        const word = entry
+            ? getEntryWord(entry, activeLookupItem.stem || lookupWord)
+            : (activeLookupItem?.stem || lookupWord);
+        fetchZhReadings(word);
+    }, [isChineseBook, activeLookupItem, lookupWord]);
+
+    // Follow "variant of X" / "see X" references: fetch X so its real definition can
+    // stand in for the bare pointer. Runs as readings arrive (backend may already have
+    // resolved them, in which case no reference remains and this is a no-op).
+    useEffect(() => {
+        if (!isChineseBook) {
+            return;
+        }
+        Object.values(zhReadings).forEach((value) => {
+            if (!Array.isArray(value)) {
+                return;
+            }
+            value.forEach((entry) => {
+                splitZhSenses(getEntryDefinition(entry)).forEach((sense) => {
+                    const reference = getZhVariantReference(sense);
+                    if (reference) {
+                        fetchZhReadings(reference);
+                    }
+                });
+            });
+        });
+    }, [isChineseBook, zhReadings]);
 
     const handleRelatedKnownWordMarked = (sourceWord, relatedWord) => {
         const normalizedSource = cleanValue(sourceWord);
@@ -1506,12 +1622,19 @@ const DictionaryContent = ({
                 <View style={styles.headwordRow}>
                     {renderHeadwordChevron('previous')}
                     <View style={styles.wordLine}>
-                        <Text selectable style={[styles.entryWord, { color: palette.text }]}>
+                        <Text selectable style={[styles.entryWord, isChineseBook && styles.zhEntryWord, { color: palette.text }]}>
                             {word}
                         </Text>
                         {hanjaElement}
                         {pronunciationText ? (
-                            <Text selectable style={[styles.entryMeta, { color: palette.mutedText }]}>
+                            <Text
+                                selectable
+                                style={[
+                                    styles.entryMeta,
+                                    isChineseBook && styles.zhHeadingPinyin,
+                                    { color: isChineseBook ? palette.text : palette.mutedText },
+                                ]}
+                            >
                                 {pronunciationText}
                             </Text>
                         ) : null}
@@ -1867,6 +1990,124 @@ const DictionaryContent = ({
         );
     };
 
+    // A reading's senses, either as one line or a numbered list when there are many.
+    const renderZhSenses = (senses, color) => {
+        if (!Array.isArray(senses) || senses.length === 0) {
+            return null;
+        }
+        if (senses.length === 1) {
+            return (
+                <Text selectable style={[styles.definitionText, { color }]}>
+                    {senses[0]}
+                </Text>
+            );
+        }
+        return (
+            <View style={styles.zhSenseList}>
+                {senses.map((sense, index) => (
+                    <View key={`${sense}-${index}`} style={styles.zhSenseItem}>
+                        <Text style={[styles.zhSenseNumber, { color }]}>{`${index + 1}.`}</Text>
+                        <Text selectable style={[styles.zhSenseText, { color }]}>{sense}</Text>
+                    </View>
+                ))}
+            </View>
+        );
+    };
+
+    // Replace a bare "variant of X" sense with X's actual senses (fetched into
+    // zhReadings by the effect below), so a reference never shows up as the meaning.
+    // Falls back to the raw sense if the target isn't resolved yet.
+    const resolveZhVariantSenses = (senses) => (senses || []).flatMap((sense) => {
+        const reference = getZhVariantReference(sense);
+        if (!reference) {
+            return [sense];
+        }
+        const target = Array.isArray(zhReadings[reference]) ? dedupeZhReadings(zhReadings[reference]) : null;
+        if (target && target.length > 0 && target[0].senses.length > 0) {
+            return target[0].senses.map((targetSense, index) => (
+                index === 0 ? `variant of ${reference}: ${targetSense}` : targetSense
+            ));
+        }
+        return [sense];
+    });
+
+    // Assemble the readings for a tapped Chinese word: all pronunciations (deduped by
+    // pinyin), each with variant references resolved, plus flags describing how many
+    // distinct readings/meanings there are so the caller can pick a layout.
+    const getChineseReadingsData = (word, fallbackPinyin, fallbackDefinition) => {
+        const loaded = Array.isArray(zhReadings[word]) ? dedupeZhReadings(zhReadings[word]) : [];
+        const base = loaded.length > 0
+            ? loaded
+            : (cleanValue(fallbackDefinition)
+                ? [{
+                    word,
+                    pinyin: cleanValue(fallbackPinyin),
+                    definition: cleanValue(fallbackDefinition),
+                    senses: splitZhSenses(fallbackDefinition),
+                }]
+                : []);
+        const readings = base.map((reading) => ({
+            ...reading,
+            senses: resolveZhVariantSenses(reading.senses),
+        }));
+        const distinctPinyins = [...new Set(readings.map((reading) => reading.pinyin).filter(Boolean))];
+        const distinctDefinitions = [...new Set(readings.map((reading) => reading.definition))];
+        const rowLayout = readings.length > 1 && distinctPinyins.length > 1 && distinctDefinitions.length > 1;
+        return { readings, distinctPinyins, distinctDefinitions, rowLayout };
+    };
+
+    // Chinese meaning body (pinyin lives in the heading now, alongside the character):
+    //  · multiple readings + differing meanings → one row per reading (char · pinyin · senses)
+    //  · otherwise → the numbered senses; the heading carries the pinyin(s).
+    const renderChineseBody = ({ readings, distinctDefinitions, rowLayout }) => {
+        if (readings.length === 0) {
+            return (
+                <Text selectable style={[styles.emptyDefinition, { color: palette.emptyText }]}>
+                    {t('lookup.noDictionaryEntry')}
+                </Text>
+            );
+        }
+
+        if (rowLayout) {
+            return (
+                <View style={styles.zhReadingList}>
+                    {readings.map((reading, index) => (
+                        <View
+                            key={`${reading.pinyin}-${index}`}
+                            style={[
+                                styles.zhReadingRow,
+                                index > 0 && { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
+                            ]}
+                        >
+                            <View style={styles.zhReadingLead}>
+                                <Text selectable style={[styles.zhReadingChar, { color: palette.text }]}>
+                                    {reading.word || ''}
+                                </Text>
+                                <Text selectable style={[styles.zhReadingPinyin, { color: palette.text }]}>
+                                    {reading.pinyin}
+                                </Text>
+                            </View>
+                            <View style={styles.zhReadingSenses}>
+                                {renderZhSenses(reading.senses, palette.secondaryText)}
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            );
+        }
+
+        // One pronunciation (or several sharing one meaning): number the senses. When
+        // several readings share a pronunciation, gather their senses together.
+        const senses = distinctDefinitions.length === 1
+            ? readings[0].senses
+            : [...new Set(readings.flatMap((reading) => reading.senses))];
+        return (
+            <View style={styles.zhSingleReading}>
+                {renderZhSenses(senses, palette.secondaryText)}
+            </View>
+        );
+    };
+
     const renderPrimaryEntry = ({
         key,
         word,
@@ -1895,10 +2136,26 @@ const DictionaryContent = ({
         // "Save this" keeps.
         const headingWord = explainMode ? explainHeadword : word;
 
+        // Chinese keeps pinyin in the heading (to the right of the character); when a
+        // word has several readings with different meanings, each reading carries its
+        // own pinyin in the body rows instead, so the heading shows none.
+        const zhData = isChineseBook && !explainMode
+            ? getChineseReadingsData(cleanValue(word), pinyin, definition)
+            : null;
+        const zhHeadingPinyin = zhData && !zhData.rowLayout
+            ? (zhData.distinctPinyins.join(' / ') || null)
+            : null;
+        const headingPinyin = isChineseBook ? zhHeadingPinyin : pinyin;
+
         return (
             <View key={key} style={[styles.primaryEntry, separated && { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                {renderEntryHeading({ word: headingWord, hanja, definition, pos, romanization, ipa, pinyin, audioUs, audioUk })}
+                {renderEntryHeading({ word: headingWord, hanja, definition, pos, romanization, ipa, pinyin: headingPinyin, audioUs, audioUk })}
                 {explainMode ? renderExplainBodySection() : (
+                    isChineseBook ? (
+                        <View style={styles.zhBody}>
+                            {renderChineseBody(zhData)}
+                        </View>
+                    ) : (
                     <>
                         {isPanelExpanded && isEnglishBook && gloss ? (
                             <Text selectable style={[styles.glossText, { color: palette.text }]}>
@@ -1927,6 +2184,7 @@ const DictionaryContent = ({
                         {isPanelExpanded && isEnglishBook && !hasRenderableWordParts(wordParts, word) ? renderOrigin(etymology, word) : null}
                         {isPanelExpanded && showLess ? renderExtraDefinitions(extraEntries) : null}
                     </>
+                    )
                 )}
             </View>
         );
@@ -2423,6 +2681,94 @@ const createStyles = (colors) => StyleSheet.create({
         fontWeight: '600',
         marginBottom: spacing.xs,
         letterSpacing: 0,
+    },
+    // --- Chinese readings body ---
+    // Keep the characters intact (never break between them) so the pinyin, not the
+    // word, is what wraps to a new line when space is tight.
+    zhEntryWord: {
+        flexShrink: 0,
+    },
+    // Pinyin sits inline to the right of the character in the heading: a clean sans
+    // face, non-italic, sized to sit on the character's baseline.
+    zhHeadingPinyin: {
+        fontFamily: fontFamilies.sansSemiBold,
+        fontSize: 16,
+        lineHeight: 24,
+        fontStyle: 'normal',
+        letterSpacing: 0.2,
+        textAlign: 'left',
+    },
+    zhBody: {
+        width: '100%',
+        paddingTop: 4,
+        paddingBottom: 2,
+    },
+    zhSingleReading: {
+        width: '100%',
+    },
+    // Pinyin: a clean sans face (tone diacritics stay legible) at a comfortable size,
+    // rather than the small display-italic used for Korean romanization.
+    zhInlinePinyin: {
+        fontFamily: fontFamilies.sansSemiBold,
+        fontSize: 17,
+        lineHeight: 24,
+        letterSpacing: 0.2,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    zhSenseList: {
+        width: '100%',
+        gap: 5,
+    },
+    zhSenseItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 6,
+        paddingHorizontal: 4,
+    },
+    zhSenseNumber: {
+        fontFamily: fontFamilies.sansSemiBold,
+        fontSize: 15,
+        lineHeight: 22,
+        minWidth: 16,
+    },
+    zhSenseText: {
+        flex: 1,
+        fontFamily: fontFamilies.sansRegular,
+        fontSize: 15,
+        lineHeight: 22,
+        letterSpacing: 0,
+    },
+    // Row-per-reading layout for heteronyms with distinct meanings.
+    zhReadingList: {
+        width: '100%',
+    },
+    zhReadingRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        paddingVertical: 9,
+    },
+    zhReadingLead: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 6,
+        minWidth: 78,
+        flexShrink: 0,
+    },
+    zhReadingChar: {
+        fontFamily: fontFamilies.krSerifSemiBold,
+        fontSize: 20,
+        lineHeight: 26,
+    },
+    zhReadingPinyin: {
+        fontFamily: fontFamilies.sansBold,
+        fontSize: 15,
+        lineHeight: 24,
+        letterSpacing: 0.2,
+    },
+    zhReadingSenses: {
+        flex: 1,
     },
     explainSection: {
         width: '100%',

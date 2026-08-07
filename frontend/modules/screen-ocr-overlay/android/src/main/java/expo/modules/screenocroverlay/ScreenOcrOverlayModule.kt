@@ -66,6 +66,14 @@ class ScreenOcrOverlayModule : Module() {
       OverlayText.currentLanguage()
     }
 
+    // The target language (Profile page) selects the OCR recognizer script. Stored
+    // statically and read when a capture session starts; a live session keeps the
+    // recognizer it began with until the widget is restarted.
+    Function("setTargetLanguage") { language: String ->
+      ScreenOcrOverlayService.setTargetLanguage(language)
+      language
+    }
+
     AsyncFunction("requestOverlayPermission") { promise: Promise ->
       if (Settings.canDrawOverlays(context)) {
         promise.resolve(mapOf("granted" to true))

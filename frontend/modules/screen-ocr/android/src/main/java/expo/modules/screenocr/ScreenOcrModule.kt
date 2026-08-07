@@ -7,27 +7,28 @@ import android.net.Uri
 import android.os.SystemClock
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
-import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import expo.modules.screenocroverlay.OcrBoxRefiner
+import expo.modules.screenocroverlay.OcrRecognizers
 import expo.modules.screenocroverlay.OcrSerializer
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class ScreenOcrModule : Module() {
-  private var recognizer: TextRecognizer? = null
+  // One recognizer per script ("ko" | "zh"); the correct model is chosen from the
+  // target language the JS layer passes in (which mirrors the Profile page).
+  private val recognizers = mutableMapOf<String, TextRecognizer>()
 
   override fun definition() = ModuleDefinition {
     Name("ScreenOcr")
 
     OnDestroy {
-      recognizer?.close()
-      recognizer = null
+      recognizers.values.forEach { it.close() }
+      recognizers.clear()
     }
 
-    AsyncFunction("recognizeImage") { uriString: String ->
+    AsyncFunction("recognizeImage") { uriString: String, language: String? ->
       if (uriString.isBlank()) {
         throw IllegalArgumentException("Image uri is required")
       }
@@ -38,7 +39,7 @@ class ScreenOcrModule : Module() {
       val image = InputImage.fromFilePath(context, uri)
       val dimensions = resolveImageDimensions(context, uri, image.width, image.height)
       val decodeEndNs = SystemClock.elapsedRealtimeNanos()
-      val currentRecognizer = getRecognizer()
+      val currentRecognizer = getRecognizer(language)
 
       val recognizeStartNs = SystemClock.elapsedRealtimeNanos()
       val result = Tasks.await(currentRecognizer.process(image))
@@ -79,15 +80,9 @@ class ScreenOcrModule : Module() {
     }
   }
 
-  private fun getRecognizer(): TextRecognizer {
-    val current = recognizer
-    if (current != null) {
-      return current
-    }
-
-    return TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build()).also {
-      recognizer = it
-    }
+  private fun getRecognizer(language: String?): TextRecognizer {
+    val key = OcrRecognizers.normalizeLanguage(language)
+    return recognizers.getOrPut(key) { OcrRecognizers.create(key) }
   }
 }
 

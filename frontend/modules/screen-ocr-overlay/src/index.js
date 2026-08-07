@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { EventEmitter, requireNativeModule } from 'expo-modules-core';
 import { translate, UI_TRANSLATIONS } from '../../../i18n/translations';
-import { getRuntimeInterfaceLanguage } from '../../../services/interfaceLanguage';
+import { getRuntimeInterfaceLanguage, getRuntimeTargetLanguage } from '../../../services/interfaceLanguage';
 
 const NativeScreenOcrOverlay = Platform.OS === 'android'
     ? requireNativeModule('ScreenOcrOverlay')
@@ -79,11 +79,24 @@ export const setOverlayInterfaceLanguage = (language = getRuntimeInterfaceLangua
     lastPushedLanguage = language;
 };
 
+// The overlay Service picks its OCR recognizer from the target language it last
+// received, so push the current one (mirrors the Profile page) before every native
+// call — cheap and keeps a freshly started capture session on the right script.
+let lastPushedTargetLanguage = null;
+export const setOverlayTargetLanguage = (language = getRuntimeTargetLanguage()) => {
+    if (!NativeScreenOcrOverlay?.setTargetLanguage || language === lastPushedTargetLanguage) {
+        return;
+    }
+    NativeScreenOcrOverlay.setTargetLanguage(language);
+    lastPushedTargetLanguage = language;
+};
+
 const callNative = (method, ...args) => {
     if (!NativeScreenOcrOverlay?.[method]) {
         return androidOnly();
     }
     setOverlayInterfaceLanguage();
+    setOverlayTargetLanguage();
     return NativeScreenOcrOverlay[method](...args);
 };
 
