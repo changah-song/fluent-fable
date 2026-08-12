@@ -148,13 +148,14 @@ def synthetic_dataset(n_users: int = 60, seed: int = 42) -> dict:
         owner = f"syn-{u}"
         true_theta = rng.uniform(-1.5, 1.5)
         theta_est = true_theta + rng.normal(0, 0.35)  # imperfect online estimate
-        self_report = int(np.clip(round(2 + true_theta), 1, 3))
-        # A fixed vocabulary of 15 words per user, each with its own difficulty
-        # band and (hidden-signal) hanja overlap.
+        self_report = int(np.clip(round(3.5 + true_theta), 1, 6))
+        # A fixed vocabulary of 15 words per user, each with its own CONTINUOUS
+        # difficulty (0..1, as korean_nikl_vocab.difficulty_percentile) and
+        # (hidden-signal) hanja overlap.
         vocab = [
             {
                 "stem": f"w{u}_{i}",
-                "rank": int(rng.integers(1, 4)),          # ko band 1..3
+                "difficulty_percentile": float(rng.random()),   # continuous [0,1]
                 "overlap": float(rng.choice([0.0, 0.0, 0.5, 1.0])),
                 "syllables": int(rng.integers(1, 4)),
             }
@@ -163,13 +164,15 @@ def synthetic_dataset(n_users: int = 60, seed: int = 42) -> dict:
         seen: set[str] = set()
         for _ in range(30):
             w = vocab[int(rng.integers(0, len(vocab)))]
-            difficulty = ((w["rank"] - 1) / 2) * 6 - 3
+            # [0,1] -> [-3,3], matching difficultyFromPercentile on the device.
+            difficulty = w["difficulty_percentile"] * 6 - 3
+            reading_level = min(6, 1 + int(w["difficulty_percentile"] * 6))
             p_true = _sigmoid(np.array(true_theta - difficulty + BETA * w["overlap"]))
             label = int(rng.random() < float(p_true))
             vector = {
                 "user_theta": theta_est,
                 "kb_difficulty": difficulty,
-                "kb_level_rank": w["rank"],
+                "kb_level_rank": reading_level,
                 "kb_syllable_count": w["syllables"],
                 "item_cross_hanja_overlap": w["overlap"],
                 "item_hanja_density": 1.0,

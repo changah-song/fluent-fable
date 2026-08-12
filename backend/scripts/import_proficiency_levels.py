@@ -70,6 +70,7 @@ CREATE TABLE korean_nikl_vocab (
   frequency_rank INTEGER,
   frequency_percentile REAL,
   difficulty_rank INTEGER NOT NULL,
+  difficulty_percentile REAL NOT NULL,
   reading_level INTEGER NOT NULL CHECK(reading_level BETWEEN 1 AND 6),
   level_rank INTEGER NOT NULL,
   source TEXT NOT NULL DEFAULT 'nikl_graded_vocab'
@@ -82,10 +83,10 @@ CREATE INDEX idx_korean_nikl_vocab_difficulty ON korean_nikl_vocab(difficulty_ra
 KOREAN_INSERT = """
 INSERT INTO korean_nikl_vocab
   (term, nikl_grade, frequency_count, frequency_rank, frequency_percentile,
-   difficulty_rank, reading_level, level_rank)
+   difficulty_rank, difficulty_percentile, reading_level, level_rank)
 VALUES
   (:term, :nikl_grade, :frequency_count, :frequency_rank, :frequency_percentile,
-   :difficulty_rank, :reading_level, :level_rank)
+   :difficulty_rank, :difficulty_percentile, :reading_level, :level_rank)
 """
 
 EN_POS_MAP = {
@@ -444,8 +445,12 @@ def load_korean_rows(
             row["term"],
         ),
     )
+    total = len(ordered)
     for index, row in enumerate(ordered, start=1):
         row["difficulty_rank"] = index
+        # Normalized [0,1] position on the difficulty axis; the on-device model maps
+        # this onto the ability scale for a continuous P(known) instead of 6 steps.
+        row["difficulty_percentile"] = round(index / total, 6) if total else 0.0
 
     reading_level_distribution = Counter(row["reading_level"] for row in ordered)
     stats = {

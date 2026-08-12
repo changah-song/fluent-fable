@@ -1,6 +1,7 @@
 import {
   SELF_REPORT_DECAY_EVENTS,
   difficultyFromLevelRank,
+  difficultyFromPercentile,
 } from './abilityModel';
 import { normalizeBookLanguage } from '../constants/languages';
 
@@ -176,16 +177,26 @@ export const assembleFeatures = (raw = {}) => {
 
   // ── Knowledge-based (pure prior; no behavior needed) ────────────────────────
   const levelRank = dict && dict.level_rank != null ? Number(dict.level_rank) : null;
+  const difficultyPercentile = dict && dict.difficulty_percentile != null
+    ? Number(dict.difficulty_percentile)
+    : null;
   F.kb_level_rank = levelRank != null
     ? feat(levelRank, true, 'knowledge')
     : absent('knowledge');
-  // Difficulty is always defined (OOV fallback when ungraded) but we flag whether
-  // it came from a real graded rank vs. the fallback, so calibration can segment.
+  // Difficulty is always defined; `note` flags which source it came from so
+  // calibration can segment. Prefer the CONTINUOUS corpus-frequency percentile
+  // (every graded word distinct → orders words within a band); fall back to the
+  // coarser level band; OOV when the word is ungraded entirely.
+  const hasContinuousDifficulty = Number.isFinite(difficultyPercentile);
   F.kb_difficulty = feat(
-    difficultyFromLevelRank(language, levelRank),
+    hasContinuousDifficulty
+      ? difficultyFromPercentile(difficultyPercentile)
+      : difficultyFromLevelRank(language, levelRank),
     true,
     'knowledge',
-    levelRank == null ? 'fallback:oov' : undefined
+    hasContinuousDifficulty
+      ? undefined
+      : (levelRank == null ? 'fallback:oov' : 'band-only')
   );
   F.kb_word_length = stem
     ? feat(stem.length, true, 'knowledge')

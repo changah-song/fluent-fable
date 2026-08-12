@@ -38,6 +38,7 @@ const DICTIONARY_CACHE_WORD_PARTS_MIGRATION_KEY = 'dictionary_cache_word_parts_m
 const DICTIONARY_CACHE_AUDIO_MIGRATION_KEY = 'dictionary_cache_audio_migration_v1';
 const DICTIONARY_CACHE_PROFICIENCY_MIGRATION_KEY = 'dictionary_cache_proficiency_migration_v1';
 const DICTIONARY_CACHE_ROMANIZATION_MIGRATION_KEY = 'dictionary_cache_romanization_migration_v1';
+const DICTIONARY_CACHE_DIFFICULTY_MIGRATION_KEY = 'dictionary_cache_difficulty_migration_v1';
 const LOCAL_OWNER_SQLITE_MIGRATION_KEY = 'local_owner_sqlite_migration_v1';
 const PROFILE_SQLITE_MIGRATION_KEY = 'profile_sqlite_migration_v1';
 export const PREPROCESS_VERSION = 4;
@@ -190,8 +191,22 @@ const normalizeDictionaryLevelMetadata = (entry = {}) => {
     ? `HSK ${entry.hsk_level}`
     : null;
 
+  // Continuous difficulty (Korean): the dense difficulty_rank and its normalized
+  // [0,1] percentile from korean_nikl_vocab, used by the P(known) model for a
+  // within-band ordering. Null for languages/words without it.
+  const numericDifficultyRank = Number(entry.difficulty_rank);
+  const difficultyRank = Number.isFinite(numericDifficultyRank)
+    ? Math.round(numericDifficultyRank)
+    : null;
+  const numericDifficultyPercentile = Number(entry.difficulty_percentile);
+  const difficultyPercentile = Number.isFinite(numericDifficultyPercentile)
+    ? numericDifficultyPercentile
+    : null;
+
   return {
     levelRank,
+    difficultyRank,
+    difficultyPercentile,
     levelLabel: entry.level_label
       ?? entry.level
       ?? entry.proficiency_level
@@ -1755,17 +1770,20 @@ export const assembleWordFeatures = async ({
   await Promise.all(chunkValues(requested).map(async (chunk) => {
     const ph = chunk.map(() => '?').join(', ');
     const rows = await runSelect(
-      `SELECT stem, pos, hanja, level_rank, definition FROM dictionary_cache
+      `SELECT stem, pos, hanja, level_rank, difficulty_percentile, definition FROM dictionary_cache
        WHERE language = ? AND stem IN (${ph})`,
       [normalizedLanguage, ...chunk]
     );
     rows.forEach((row) => {
       const cur = dictByStem[row.stem] ?? (dictByStem[row.stem] = {
-        pos: null, hanja: null, level_rank: null, definition: null,
+        pos: null, hanja: null, level_rank: null, difficulty_percentile: null, definition: null,
       });
       if (cur.pos == null && row.pos) cur.pos = row.pos;
       if (cur.hanja == null && row.hanja) cur.hanja = row.hanja;
       if (cur.level_rank == null && row.level_rank != null) cur.level_rank = row.level_rank;
+      if (cur.difficulty_percentile == null && row.difficulty_percentile != null) {
+        cur.difficulty_percentile = row.difficulty_percentile;
+      }
       if (cur.definition == null && row.definition) cur.definition = row.definition;
     });
   }));
@@ -2333,6 +2351,8 @@ export const createDictionaryCacheTable = () => {
           level_label  TEXT,
           level_system TEXT,
           level_source TEXT,
+          difficulty_rank       INTEGER,
+          difficulty_percentile REAL,
           last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(language, stem, interface_language)
         )`,
@@ -2756,6 +2776,73 @@ export const migrateDictionaryCacheProficiencyLevels = async () => {
   });
 
   await AsyncStorage.setItem(DICTIONARY_CACHE_PROFICIENCY_MIGRATION_KEY, 'done');
+};
+
+// Phase 2 (continuous Korean difficulty): add the difficulty_rank / difficulty_percentile
+// columns and rescale legacy Korean rows. level_rank changed meaning from the 3 NIKL
+// grades (1..3) to the 6 Noeul reading levels (1..6); rows the OLD backend wrote carry
+// level_system='NIKL', so we remap those onto the LOWER band of each grade's Lower/Upper
+// pair (초급→1, 중급→3, 고급→5) — grade-correct immediately, refined to the exact reading
+// level + difficulty percentile on the word's next lookup. Rows already written by the new
+// backend carry level_system='Noeul Reading Levels' and are left untouched, so this is safe
+// to run over a cache that mixes old and new entries.
+export const migrateDictionaryCacheDifficulty = async () => {
+  const migrationState = await AsyncStorage.getItem(DICTIONARY_CACHE_DIFFICULTY_MIGRATION_KEY);
+  const columns = await getTableColumns('dictionary_cache');
+  const difficultyColumns = [
+    ['difficulty_rank', 'INTEGER'],
+    ['difficulty_percentile', 'REAL'],
+  ];
+  const missingColumns = difficultyColumns.filter(([column]) => !columns.includes(column));
+
+  if (migrationState === 'done' && missingColumns.length === 0) return;
+
+  if (missingColumns.length > 0) {
+    await new Promise((resolve, reject) => {
+      db.transaction(
+        tx => {
+          missingColumns.forEach(([column, type]) => {
+            tx.executeSql(
+              `ALTER TABLE dictionary_cache ADD COLUMN ${column} ${type}`,
+              [],
+              () => {},
+              (_, error) => {
+                console.error(`[Database] Error adding dictionary_cache.${column}:`, error);
+                reject(error);
+                return false;
+              }
+            );
+          });
+        },
+        reject,
+        resolve
+      );
+    });
+  }
+
+  await new Promise((resolve, reject) => {
+    db.transaction(
+      tx => {
+        tx.executeSql(
+          `UPDATE dictionary_cache
+             SET level_rank = CASE level_rank WHEN 1 THEN 1 WHEN 2 THEN 3 WHEN 3 THEN 5 ELSE level_rank END,
+                 level_system = 'Noeul Reading Levels'
+           WHERE language = 'ko' AND level_system = 'NIKL' AND level_rank IN (1, 2, 3)`,
+          [],
+          () => {},
+          (_, error) => {
+            console.error('[Database] Error rescaling legacy Korean level_rank:', error);
+            reject(error);
+            return false;
+          }
+        );
+      },
+      reject,
+      resolve
+    );
+  });
+
+  await AsyncStorage.setItem(DICTIONARY_CACHE_DIFFICULTY_MIGRATION_KEY, 'done');
 };
 
 export const migrateDictionaryCacheRomanization = async () => {
@@ -4028,6 +4115,7 @@ export const initAllTables = async () => {
   await migrateDictionaryCacheWordParts();
   await migrateDictionaryCacheAudio();
   await migrateDictionaryCacheProficiencyLevels();
+  await migrateDictionaryCacheDifficulty();
   await migrateDictionaryCacheRomanization();
   await migrateBookIndex();
   await createBookIndexTable();
@@ -5614,8 +5702,8 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
           tx.executeSql(
             `INSERT INTO dictionary_cache
                (stem, language, interface_language, definition, gloss, hanja, pos, domain, romanization, ipa, audio_us, audio_uk, etymology, derived, related, word_parts,
-                level_rank, level_label, level_system, level_source)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                level_rank, level_label, level_system, level_source, difficulty_rank, difficulty_percentile)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(stem, language, interface_language) DO UPDATE SET
                definition = COALESCE(excluded.definition, dictionary_cache.definition),
                gloss = COALESCE(excluded.gloss, dictionary_cache.gloss),
@@ -5634,6 +5722,8 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
                level_label = COALESCE(excluded.level_label, dictionary_cache.level_label),
                level_system = COALESCE(excluded.level_system, dictionary_cache.level_system),
                level_source = COALESCE(excluded.level_source, dictionary_cache.level_source),
+               difficulty_rank = COALESCE(excluded.difficulty_rank, dictionary_cache.difficulty_rank),
+               difficulty_percentile = COALESCE(excluded.difficulty_percentile, dictionary_cache.difficulty_percentile),
                last_updated = CURRENT_TIMESTAMP`,
             [
               stem,
@@ -5658,6 +5748,8 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
               levelMetadata.levelLabel,
               levelMetadata.levelSystem,
               levelMetadata.levelSource,
+              levelMetadata.difficultyRank,
+              levelMetadata.difficultyPercentile,
             ]
           );
         });
@@ -5875,7 +5967,8 @@ export const lookupBookLevelSurfaces = (
                 dc.level_rank,
                 dc.level_label,
                 dc.level_system,
-                dc.level_source
+                dc.level_source,
+                dc.ipa
          FROM dictionary_cache dc
          JOIN book_index bi ON bi.stem_id = dc.id
          WHERE dc.language = ?

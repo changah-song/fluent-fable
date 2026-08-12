@@ -25,11 +25,12 @@ import {
 } from '../abilityModel';
 
 describe('seedThetaFromRank', () => {
-  it('maps the lowest band to the floor and the highest to the ceiling (ko: 3 bands)', () => {
+  it('maps the lowest band to the floor and the highest to the ceiling (ko: 6 bands)', () => {
     expect(seedThetaFromRank('ko', 1)).toBe(ABILITY_THETA_MIN);
-    expect(seedThetaFromRank('ko', 3)).toBe(ABILITY_THETA_MAX);
-    // The middle band sits exactly at the midpoint (0).
-    expect(seedThetaFromRank('ko', 2)).toBe(0);
+    expect(seedThetaFromRank('ko', 6)).toBe(ABILITY_THETA_MAX);
+    // With six bands the midpoint (0) falls between bands 3 and 4.
+    expect(seedThetaFromRank('ko', 3)).toBeLessThan(0);
+    expect(seedThetaFromRank('ko', 4)).toBeGreaterThan(0);
   });
 
   it('spans the same [-3, 3] range for a language with more bands (en: 6 bands)', () => {

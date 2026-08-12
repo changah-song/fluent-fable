@@ -98,6 +98,31 @@ export const difficultyFromLevelRank = (language, levelRank) => {
 };
 
 /**
+ * difficultyFromPercentile — map a word's CONTINUOUS difficulty position onto the
+ * same [ABILITY_THETA_MIN, ABILITY_THETA_MAX] scale as ability.
+ *
+ * The finer-grained successor to difficultyFromLevelRank: instead of one of a few
+ * bands, every graded word carries its own `difficulty_percentile` (0 = easiest,
+ * 1 = hardest — from korean_nikl_vocab: dense difficulty_rank / N over the graded
+ * set, grade-ordered then frequency-ordered), so P(known) can order words *within*
+ * a band too. Language-agnostic: the percentile is already normalized, so unlike
+ * rankToScale there's no per-language band count to divide by.
+ *
+ * A missing/invalid percentile returns OOV_DIFFICULTY; the caller flags the fallback.
+ *
+ * @param {number|null} percentile  difficulty position in [0,1], or null if absent
+ * @returns {number} difficulty in [ABILITY_THETA_MIN, ABILITY_THETA_MAX]
+ */
+export const difficultyFromPercentile = (percentile) => {
+  const p = Number(percentile);
+  if (!Number.isFinite(p)) {
+    return OOV_DIFFICULTY;
+  }
+  const normalized = clamp(p, 0, 1);
+  return ABILITY_THETA_MIN + normalized * (ABILITY_THETA_MAX - ABILITY_THETA_MIN);
+};
+
+/**
  * sigmoid — the logistic link used by the baseline scorer. Exposed here so
  * Phase 2.3 and any tests share one definition.
  */

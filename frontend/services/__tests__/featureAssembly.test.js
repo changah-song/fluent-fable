@@ -122,6 +122,33 @@ describe('assembleFeatures — explicit missingness contract', () => {
     expect(f.item_hanja_density.value).toBe(1);
   });
 
+  it('prefers the continuous difficulty percentile over the coarse band', () => {
+    const easy = assembleFeatures({
+      language: 'ko',
+      stem: '학교',
+      dict: { pos: 'noun', level_rank: 5, difficulty_percentile: 0.02 },
+    });
+    const hard = assembleFeatures({
+      language: 'ko',
+      stem: '난해',
+      dict: { pos: 'noun', level_rank: 5, difficulty_percentile: 0.98 },
+    });
+    // Same coarse band (5), but the continuous percentile still orders them — a very
+    // frequent word is far easier than a very rare one — and the note is unflagged.
+    expect(easy.kb_difficulty.note).toBeUndefined();
+    expect(hard.kb_difficulty.note).toBeUndefined();
+    expect(easy.kb_difficulty.value).toBeLessThan(hard.kb_difficulty.value);
+  });
+
+  it('flags band-only difficulty when a graded word lacks a percentile', () => {
+    const f = assembleFeatures({
+      language: 'ko',
+      stem: '학교',
+      dict: { pos: 'noun', level_rank: 1, definition: null },
+    });
+    expect(f.kb_difficulty).toMatchObject({ present: true, note: 'band-only' });
+  });
+
   it('turns on SRS + explicit features only when the word is saved', () => {
     const now = Date.parse('2026-07-07T00:00:00Z');
     const savedAgo = new Date(now - 30 * 86400000).toISOString(); // 30 days ago
