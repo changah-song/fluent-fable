@@ -7,6 +7,7 @@ import {
   levelUnderlineWeight,
   lowestUnderlinedRank,
   pKnown,
+  underlineCategory,
 } from '../abilityModel';
 
 // The reader shades its level underlines on a green→amber→red gradient driven by
@@ -78,5 +79,28 @@ describe('lowestUnderlinedRank', () => {
   it('returns null when every band is known well enough to leave alone', () => {
     // A ceiling-ability reader out-levels even the hardest band.
     expect(lowestUnderlinedRank('ko', 100)).toBeNull();
+  });
+});
+
+describe('underlineCategory (§8 hard+rare vs hard+frequent)', () => {
+  it('leaves well-known words unmarked regardless of exposure', () => {
+    expect(underlineCategory(0.99, 0)).toBeNull();
+    expect(underlineCategory(0.99, 50)).toBeNull();
+  });
+
+  it('flags a hard, rare word as study-worthy and a hard, frequent one as reinforced', () => {
+    const rare = underlineCategory(0.05, 0);
+    const frequent = underlineCategory(0.05, 10);
+    expect(rare).toMatchObject({ category: 'study' });
+    expect(frequent).toMatchObject({ category: 'reinforced' });
+    // Same difficulty → same underline weight; only the advice (color) differs.
+    expect(rare.weight).toBe(levelUnderlineWeight(0.05));
+    expect(frequent.weight).toBe(rare.weight);
+  });
+
+  it('treats unknown/zero remaining exposure as study — never assume reinforcement', () => {
+    expect(underlineCategory(0.05, null).category).toBe('study');
+    expect(underlineCategory(0.05, undefined).category).toBe('study');
+    expect(underlineCategory(0.05, 0).category).toBe('study');
   });
 });

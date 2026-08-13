@@ -1,5 +1,6 @@
 import { PROFICIENCY_LEVEL_OPTIONS } from '../constants/proficiencyLevels';
 import { normalizeBookLanguage } from '../constants/languages';
+import { remainingExposureFactor } from './flashcardNomination';
 
 // ─── Ability model (Phase 2 of the personalized vocabulary model) ─────────────
 //
@@ -201,6 +202,36 @@ export const levelUnderlineWeight = (p) => {
   }
   const span = UNDERLINE_KNOWN_CEILING - UNDERLINE_HARD_FLOOR;
   return clamp((UNDERLINE_KNOWN_CEILING - value) / span, 0, 1);
+};
+
+// A hard (underlined) word is only worth a flashcard when the book WON'T reteach it.
+// At/above this remaining-exposure factor the text will reinforce the word on its own
+// ('reinforced' — a calmer color); below it the word is hard AND rare ('study' — the
+// flashcard-worthy color). §8's point is to stop every hard word from feeling like it
+// must become a card, so the reader can relax about the ones the book will repeat.
+export const REINFORCED_EXPOSURE_FLOOR = 0.5; // ≈ 5+ more encounters at saturation 10
+
+/**
+ * underlineCategory — how a graded word should be highlighted, combining intrinsic
+ * difficulty (P(known)) with the book's future exposure (remaining occurrences). The
+ * §8 "hard + rare vs hard + frequent" split: same difficulty, different advice.
+ *
+ * @param {number} pKnown          P(known) in (0, 1)
+ * @param {number} remainingCount  occurrences of the word still ahead in the book
+ * @returns {{ weight:number, category:'study'|'reinforced', exposure:number }|null}
+ *          null when the word is known well enough to leave unmarked.
+ */
+export const underlineCategory = (pKnown, remainingCount) => {
+  const weight = levelUnderlineWeight(pKnown);
+  if (weight == null) {
+    return null;
+  }
+  const exposure = remainingExposureFactor(remainingCount);
+  return {
+    weight,
+    exposure,
+    category: exposure >= REINFORCED_EXPOSURE_FLOOR ? 'reinforced' : 'study',
+  };
 };
 
 /**
