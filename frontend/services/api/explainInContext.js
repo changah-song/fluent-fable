@@ -5,6 +5,11 @@ export const explainInContext = async ({
   sentence,
   language,
   interfaceLanguage,
+  // Optional grounding for the agentic (EXPLAIN_USE_GRAPH) backend workflow. All
+  // omittable — the backend degrades to an ungrounded explanation when absent.
+  pKnown,
+  hanja,
+  anchorWords,
   timeout = 30000,
 } = {}) => {
   const response = await api.post(
@@ -14,6 +19,11 @@ export const explainInContext = async ({
       sentence,
       language,
       interface_language: interfaceLanguage,
+      // Only include grounding fields that are actually present, so we never send
+      // nulls that would look like deliberate "no signal" values.
+      ...(Number.isFinite(pKnown) ? { p_known: pKnown } : {}),
+      ...(hanja ? { hanja } : {}),
+      ...(Array.isArray(anchorWords) && anchorWords.length ? { anchor_words: anchorWords } : {}),
     },
     {
       timeout,

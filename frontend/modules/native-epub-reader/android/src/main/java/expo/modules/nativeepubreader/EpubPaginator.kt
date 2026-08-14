@@ -30,7 +30,11 @@ class EpubPaginator(
   private val lineHeightMult: Float,
   private val isDark: Boolean,
   private val readerTextColor: Int,
-  private val context: Context
+  private val context: Context,
+  // Extra vertical space added above each line to hold pinyin annotations (0 when
+  // the pinyin toggle is off). Applied as leading so lines separate and the ruby
+  // row has room; the page view draws the pinyin into that gap.
+  private val rubySpacePx: Int = 0
 ) {
   private val contentWidth = (pageWidth - (paddingH * 2)).coerceAtLeast(1)
   private val contentHeight = (pageHeight - (paddingV * 2)).coerceAtLeast(1)
@@ -380,7 +384,9 @@ class EpubPaginator(
     return StaticLayout.Builder
       .obtain(text, 0, text.length, block.textPaint!!, block.contentWidth.coerceAtLeast(1))
       .setAlignment(block.textAlign)
-      .setLineSpacing(0f, block.lineHeightMult)
+      // spacingAdd sits below each line = above the next, which is exactly where the
+      // pinyin row goes; 0 when pinyin is off so normal reading stays dense.
+      .setLineSpacing(rubySpacePx.toFloat(), block.lineHeightMult)
       .setIncludePad(true)
       .build()
   }

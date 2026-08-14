@@ -39,6 +39,7 @@ const DICTIONARY_CACHE_AUDIO_MIGRATION_KEY = 'dictionary_cache_audio_migration_v
 const DICTIONARY_CACHE_PROFICIENCY_MIGRATION_KEY = 'dictionary_cache_proficiency_migration_v1';
 const DICTIONARY_CACHE_ROMANIZATION_MIGRATION_KEY = 'dictionary_cache_romanization_migration_v1';
 const DICTIONARY_CACHE_DIFFICULTY_MIGRATION_KEY = 'dictionary_cache_difficulty_migration_v1';
+const DICTIONARY_CACHE_ZH_SCRIPTS_MIGRATION_KEY = 'dictionary_cache_zh_scripts_migration_v1';
 const LOCAL_OWNER_SQLITE_MIGRATION_KEY = 'local_owner_sqlite_migration_v1';
 const PROFILE_SQLITE_MIGRATION_KEY = 'profile_sqlite_migration_v1';
 export const PREPROCESS_VERSION = 4;
@@ -2341,6 +2342,8 @@ export const createDictionaryCacheTable = () => {
           domain       TEXT,
           romanization TEXT,
           ipa          TEXT,
+          simplified   TEXT,
+          traditional  TEXT,
           audio_us     TEXT,
           audio_uk     TEXT,
           etymology    TEXT,
@@ -2869,6 +2872,43 @@ export const migrateDictionaryCacheRomanization = async () => {
   }
 
   await AsyncStorage.setItem(DICTIONARY_CACHE_ROMANIZATION_MIGRATION_KEY, 'done');
+};
+
+// Chinese lookups keep BOTH the Simplified and Traditional headword forms so the
+// definition panel can show both regardless of the book's script. CC-CEDICT
+// carries both, so these are populated from preprocess/live results; older rows
+// stay null until re-fetched.
+export const migrateDictionaryCacheZhScripts = async () => {
+  const migrationState = await AsyncStorage.getItem(DICTIONARY_CACHE_ZH_SCRIPTS_MIGRATION_KEY);
+  const columns = await getTableColumns('dictionary_cache');
+
+  if (migrationState === 'done' && columns.includes('simplified') && columns.includes('traditional')) {
+    return;
+  }
+
+  const addColumn = (name) => new Promise((resolve, reject) => {
+    db.transaction(tx => {
+      tx.executeSql(
+        `ALTER TABLE dictionary_cache ADD COLUMN ${name} TEXT`,
+        [],
+        () => resolve(),
+        (_, error) => {
+          console.error(`[Database] Error adding dictionary_cache.${name}:`, error);
+          reject(error);
+          return false;
+        }
+      );
+    });
+  });
+
+  if (!columns.includes('simplified')) {
+    await addColumn('simplified');
+  }
+  if (!columns.includes('traditional')) {
+    await addColumn('traditional');
+  }
+
+  await AsyncStorage.setItem(DICTIONARY_CACHE_ZH_SCRIPTS_MIGRATION_KEY, 'done');
 };
 
 /**
@@ -4117,6 +4157,7 @@ export const initAllTables = async () => {
   await migrateDictionaryCacheProficiencyLevels();
   await migrateDictionaryCacheDifficulty();
   await migrateDictionaryCacheRomanization();
+  await migrateDictionaryCacheZhScripts();
   await migrateBookIndex();
   await createBookIndexTable();
   await createBookNotesTable();
@@ -5682,6 +5723,8 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
             domain,
             romanization,
             ipa,
+            simplified,
+            traditional,
             audio_us,
             audio_uk,
             etymology,
@@ -5701,9 +5744,9 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
           const levelMetadata = normalizeDictionaryLevelMetadata(entry);
           tx.executeSql(
             `INSERT INTO dictionary_cache
-               (stem, language, interface_language, definition, gloss, hanja, pos, domain, romanization, ipa, audio_us, audio_uk, etymology, derived, related, word_parts,
+               (stem, language, interface_language, definition, gloss, hanja, pos, domain, romanization, ipa, simplified, traditional, audio_us, audio_uk, etymology, derived, related, word_parts,
                 level_rank, level_label, level_system, level_source, difficulty_rank, difficulty_percentile)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(stem, language, interface_language) DO UPDATE SET
                definition = COALESCE(excluded.definition, dictionary_cache.definition),
                gloss = COALESCE(excluded.gloss, dictionary_cache.gloss),
@@ -5712,6 +5755,8 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
                domain = COALESCE(excluded.domain, dictionary_cache.domain),
                romanization = COALESCE(excluded.romanization, dictionary_cache.romanization),
                ipa = COALESCE(excluded.ipa, dictionary_cache.ipa),
+               simplified = COALESCE(excluded.simplified, dictionary_cache.simplified),
+               traditional = COALESCE(excluded.traditional, dictionary_cache.traditional),
                audio_us = COALESCE(excluded.audio_us, dictionary_cache.audio_us),
                audio_uk = COALESCE(excluded.audio_uk, dictionary_cache.audio_uk),
                etymology = COALESCE(excluded.etymology, dictionary_cache.etymology),
@@ -5736,6 +5781,8 @@ export const insertCacheEntries = (entries, scopeOrInterfaceLanguage = 'en', opt
               domain ?? null,
               romanization ?? null,
               ipa ?? null,
+              simplified ?? null,
+              traditional ?? null,
               audio_us ?? null,
               audio_uk ?? null,
               etymology ?? null,
@@ -5817,7 +5864,7 @@ export const lookupCacheByStems = (stems, scopeOrInterfaceLanguage = 'en', optio
     const scope = normalizeDictionaryCacheScope(scopeOrInterfaceLanguage, options);
     db.transaction(tx => {
       tx.executeSql(
-        `SELECT id, stem, language, interface_language, definition, gloss, hanja, pos, domain, romanization, ipa, audio_us, audio_uk, etymology, derived, related, word_parts,
+        `SELECT id, stem, language, interface_language, definition, gloss, hanja, pos, domain, romanization, ipa, simplified, traditional, audio_us, audio_uk, etymology, derived, related, word_parts,
                 level_rank, level_label, level_system, level_source
          FROM dictionary_cache
          WHERE language = ? AND interface_language = ? AND stem IN (${placeholders})`,
@@ -5865,7 +5912,7 @@ export const lookupBookIndexBySurface = (ownerId, bookUri, surface, scopeOrInter
     db.transaction(tx => {
       tx.executeSql(
         `SELECT dc.id, dc.stem, dc.language, dc.interface_language, dc.definition, dc.gloss, dc.hanja, dc.pos,
-                dc.domain, dc.romanization, dc.ipa, dc.audio_us, dc.audio_uk, dc.etymology, dc.derived, dc.related, dc.word_parts,
+                dc.domain, dc.romanization, dc.ipa, dc.simplified, dc.traditional, dc.audio_us, dc.audio_uk, dc.etymology, dc.derived, dc.related, dc.word_parts,
                 dc.level_rank, dc.level_label, dc.level_system, dc.level_source
          FROM book_index bi
          JOIN dictionary_cache dc ON dc.id = bi.stem_id
@@ -5968,7 +6015,8 @@ export const lookupBookLevelSurfaces = (
                 dc.level_label,
                 dc.level_system,
                 dc.level_source,
-                dc.ipa
+                dc.ipa,
+                COUNT(*) OVER (PARTITION BY dc.stem) AS stem_count
          FROM dictionary_cache dc
          JOIN book_index bi ON bi.stem_id = dc.id
          WHERE dc.language = ?

@@ -124,13 +124,17 @@ data class OverlayHanjaRelatedWord(
 
 object OcrSerializer {
   private const val TOP_CHROME_RATIO = 0.14f
-  private const val MIN_HANGUL_RATIO = 0.25f
+  // A line is kept only if enough of it is in the target language's script, which
+  // drops UI chrome and stray Latin. The script depends on the target language
+  // (Hangul for Korean, Han ideographs for Chinese), so this must be language-aware.
+  private const val MIN_TARGET_SCRIPT_RATIO = 0.25f
   private val ignoredLabels = setOf("ocr", "floating ocr")
 
   fun serialize(
     result: Text,
     imageWidth: Int,
     imageHeight: Int,
+    language: String? = null,
     filterTopChrome: Boolean = true,
     includeText: Boolean = true,
     includeBlocks: Boolean = true,
@@ -143,6 +147,7 @@ object OcrSerializer {
       serializeBlock(
         block = block,
         imageHeight = imageHeight,
+        language = language,
         filterTopChrome = filterTopChrome,
         targets = targets,
         debugBoxes = debugBoxes,
@@ -183,6 +188,7 @@ object OcrSerializer {
   private fun serializeBlock(
     block: Text.TextBlock,
     imageHeight: Int,
+    language: String?,
     filterTopChrome: Boolean,
     targets: MutableList<OcrTapTarget>,
     debugBoxes: MutableList<OcrDebugBox>,
@@ -194,6 +200,7 @@ object OcrSerializer {
       serializeLine(
         line = line,
         imageHeight = imageHeight,
+        language = language,
         filterTopChrome = filterTopChrome,
         targets = targets,
         debugBoxes = debugBoxes,
@@ -214,6 +221,7 @@ object OcrSerializer {
   private fun serializeLine(
     line: Text.Line,
     imageHeight: Int,
+    language: String?,
     filterTopChrome: Boolean,
     targets: MutableList<OcrTapTarget>,
     debugBoxes: MutableList<OcrDebugBox>,
@@ -222,7 +230,7 @@ object OcrSerializer {
   ): Map<String, Any?>? {
     val lineBox = line.boundingBox
     val lineText = line.text.trim()
-    val accepted = shouldAcceptLine(lineText, lineBox, imageHeight, filterTopChrome)
+    val accepted = shouldAcceptLine(lineText, lineBox, imageHeight, filterTopChrome, language)
 
     if (includeDebugBoxes && lineBox != null && lineText.isNotEmpty()) {
       debugBoxes.add(
@@ -335,7 +343,8 @@ object OcrSerializer {
     text: String,
     box: Rect?,
     imageHeight: Int,
-    filterTopChrome: Boolean
+    filterTopChrome: Boolean,
+    language: String?
   ): Boolean {
     if (text.isBlank() || box == null || box.width() <= 0 || box.height() <= 0) {
       return false
@@ -349,23 +358,34 @@ object OcrSerializer {
       return false
     }
 
-    return hangulRatio(text) >= MIN_HANGUL_RATIO
+    return targetScriptRatio(text, language) >= MIN_TARGET_SCRIPT_RATIO
   }
 
-  private fun hangulRatio(text: String): Float {
+  // Share of letters/digits that belong to the target language's script: Han
+  // ideographs for Chinese, Hangul for Korean (and the default). Chinese text has
+  // no Hangul, so keying this off Hangul dropped every Chinese line.
+  private fun targetScriptRatio(text: String, language: String?): Float {
     val contentChars = text.filter { it.isLetterOrDigit() }
     if (contentChars.isEmpty()) {
       return 0f
     }
 
-    val hangulCount = contentChars.count(::isHangul)
-    return hangulCount.toFloat() / contentChars.length
+    val inTargetScript: (Char) -> Boolean = when (OcrRecognizers.normalizeLanguage(language)) {
+      "zh" -> ::isCjkIdeograph
+      else -> ::isHangul
+    }
+    return contentChars.count(inTargetScript).toFloat() / contentChars.length
   }
 
   private fun isHangul(char: Char): Boolean =
     char in '\uAC00'..'\uD7A3' ||
       char in '\u1100'..'\u11FF' ||
       char in '\u3130'..'\u318F'
+
+  private fun isCjkIdeograph(char: Char): Boolean =
+    char in '\u3400'..'\u4DBF' ||
+      char in '\u4E00'..'\u9FFF' ||
+      char in '\uF900'..'\uFAFF'
 }
 
 private data class LineToken(

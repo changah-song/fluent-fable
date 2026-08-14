@@ -50,6 +50,7 @@ class ScreenOcrModule : Module() {
         result = result,
         imageWidth = dimensions.first,
         imageHeight = dimensions.second,
+        language = language,
         filterTopChrome = false,
         includeText = true,
         includeBlocks = true,

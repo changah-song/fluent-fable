@@ -1618,6 +1618,11 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
     const [ocrSettingsLoaded, setOcrSettingsLoaded] = useState(false);
     const songCloudSyncOwnerRef = useRef(null);
     const songStorageLimitAlertedRef = useRef(false);
+    // Tracks which storage key (owner + target language) the current `songs`
+    // state was loaded for. The persist effect writes only when this matches the
+    // active key, so a target-language switch never flushes the previous
+    // language's songs into the new language's key (which erased them).
+    const loadedSongsStorageKeyRef = useRef(null);
     const activeOwnerIdRef = useRef(activeOwnerId);
     activeOwnerIdRef.current = activeOwnerId;
     const ocrActionInFlightRef = useRef(false);
@@ -2300,9 +2305,13 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
             setShowAddSongModal(false);
             setSongDraft(EMPTY_SONG_DRAFT);
             songCloudSyncOwnerRef.current = null;
+            // Invalidate the persist guard until this load resolves — the in-state
+            // songs no longer belong to any storage key, so nothing should flush.
+            loadedSongsStorageKeyRef.current = null;
+
+            const storageKey = getSongsStorageKey(ownerId, targetLanguage);
 
             try {
-                const storageKey = getSongsStorageKey(ownerId, targetLanguage);
                 let storedSongs = await AsyncStorage.getItem(storageKey);
 
                 if (!storedSongs && ownerId === GUEST_OWNER_ID && targetLanguage === 'ko') {
@@ -2352,6 +2361,9 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
                 console.error('[Home] Failed to load songs:', error);
             } finally {
                 if (isActive) {
+                    // The in-state songs now correspond to this storage key, so the
+                    // persist effect is cleared to flush future edits back to it.
+                    loadedSongsStorageKeyRef.current = storageKey;
                     setSongsLoaded(true);
                 }
             }
@@ -2513,6 +2525,16 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
             return;
         }
 
+        const storageKey = getSongsStorageKey(activeOwnerId, targetLanguage);
+        // On a target-language (or owner) switch this effect re-runs while `songs`
+        // still holds the previous language's list — before loadSongs has swapped
+        // it out. Writing here would clobber the new key with stale songs and
+        // erase whatever was saved under it. Only persist once loadSongs has
+        // confirmed the in-state songs belong to this exact key.
+        if (loadedSongsStorageKeyRef.current !== storageKey) {
+            return;
+        }
+
         let serializedSongs;
         try {
             serializedSongs = serializeSongsForStorage(songs);
@@ -2525,7 +2547,7 @@ const Home = ({ books, setBooks, currentBook, setCurrentBook, setPreprocessOnOpe
             return;
         }
 
-        AsyncStorage.setItem(getSongsStorageKey(activeOwnerId, targetLanguage), serializedSongs)
+        AsyncStorage.setItem(storageKey, serializedSongs)
             .then(() => {
                 songStorageLimitAlertedRef.current = false;
             })

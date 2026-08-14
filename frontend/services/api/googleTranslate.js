@@ -18,7 +18,10 @@ const normalizeTranslationLanguageCode = (language, fallback) => {
   return normalized || fallback;
 };
 
-export const translateText = async ({
+// Translate text and, for Chinese source text, also return tone-marked pinyin so
+// the panels can show the reading above the translation. Returns
+// { translatedText, pinyin } — pinyin is null for non-Chinese source.
+export const translateWithPinyin = async ({
   query,
   source = 'ko',
   target = 'en',
@@ -29,11 +32,11 @@ export const translateText = async ({
   const targetLanguage = normalizeTranslationLanguageCode(target, 'en');
 
   if (!cleanedQuery) {
-    return '';
+    return { translatedText: '', pinyin: null };
   }
 
   if (sourceLanguage === targetLanguage) {
-    return cleanedQuery;
+    return { translatedText: cleanedQuery, pinyin: null };
   }
 
   const response = await api.post('/translate/', {
@@ -47,7 +50,15 @@ export const translateText = async ({
     },
   });
 
-  return response.data?.translatedText?.trim?.() ?? '';
+  return {
+    translatedText: response.data?.translatedText?.trim?.() ?? '',
+    pinyin: response.data?.pinyin?.trim?.() ?? null,
+  };
+};
+
+export const translateText = async (params = {}) => {
+  const { translatedText } = await translateWithPinyin(params);
+  return translatedText;
 };
 
 const googleTranslate = ({ query, source = null, target = null } = {}) => {

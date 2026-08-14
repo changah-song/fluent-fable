@@ -19,6 +19,10 @@ from functools import partial
 import certifi
 from dotenv import load_dotenv
 
+# Pure helpers (no langgraph import at module load); the compiled graph itself is
+# built lazily in get_explain_graph().
+from explain_graph import familiarity_from_p_known, p_known_for, run_explain_graph
+
 try:
     from koroman import romanize as koroman_romanize
 except ImportError:
@@ -33,6 +37,12 @@ try:
     import jieba.posseg as zh_pseg
 except ImportError:
     zh_pseg = None
+
+try:
+    from pypinyin import pinyin as _pypinyin, Style as _PinyinStyle
+except ImportError:
+    _pypinyin = None
+    _PinyinStyle = None
 
 try:
     import anthropic as anthropic_sdk
@@ -135,16 +145,19 @@ BOOK_LEVEL_LABELS = {
         7: "HSK 7",
     },
     "ko": {
-        1: "초급",
-        2: "중급",
-        3: "고급",
+        1: "Lower Elementary",
+        2: "Upper Elementary",
+        3: "Lower Intermediate",
+        4: "Upper Intermediate",
+        5: "Lower Advanced",
+        6: "Upper Advanced",
     },
 }
 
 BOOK_LEVEL_SYSTEMS = {
     "en": "CEFR",
     "zh": "HSK",
-    "ko": "NIKL",
+    "ko": "Noeul Reading Levels",
 }
 
 
@@ -268,16 +281,26 @@ def korean_nikl_payload(row: sqlite3.Row | None) -> dict | None:
         return None
 
     grade = row["nikl_grade"]
-    rank = int(row["level_rank"])
+    # level_rank == reading_level (1..6), so book difficulty and labels stay
+    # symmetric with English (CEFR) and Chinese (HSK). The fine-grained
+    # difficulty_rank is exposed separately for the personalization model.
+    reading_level = int(row["reading_level"])
+    difficulty_rank = int(row["difficulty_rank"])
+    difficulty_percentile = row["difficulty_percentile"]
+    frequency_percentile = row["frequency_percentile"]
     return {
         "nikl_grade": grade,
         "korean_level": grade,
-        "korean_rank": rank,
-        "level_rank": rank,
-        "level_source": "nikl_graded_vocab",
-        "proficiency_system": "NIKL",
-        "proficiency_level": grade,
-        "proficiency_rank": rank,
+        "korean_rank": reading_level,
+        "reading_level": reading_level,
+        "difficulty_rank": difficulty_rank,
+        "difficulty_percentile": difficulty_percentile,
+        "frequency_percentile": frequency_percentile,
+        "level_rank": reading_level,
+        "level_source": "noeul_reading_levels",
+        "proficiency_system": "Noeul Reading Levels",
+        "proficiency_level": BOOK_LEVEL_LABELS["ko"].get(reading_level, grade),
+        "proficiency_rank": reading_level,
     }
 
 
@@ -382,7 +405,8 @@ def lookup_korean_nikl_levels(stems: list[str]) -> dict[str, dict]:
             placeholders = ",".join(["?"] * len(batch))
             for row in conn.execute(
                 f"""
-                SELECT term, nikl_grade, level_rank
+                SELECT term, nikl_grade, level_rank, reading_level,
+                       difficulty_rank, difficulty_percentile, frequency_percentile
                 FROM korean_nikl_vocab
                 WHERE term IN ({placeholders})
                 """,
@@ -940,6 +964,46 @@ MODEL_PRICING_PER_MTOK = {
 }
 
 LOOKUP_CACHE_MAX_ROWS = 100_000
+
+# When on, /explain_in_context/ runs the multi-step agentic LangGraph workflow
+# (ground -> draft -> verify -> refine) instead of the single-shot model call.
+# Default off so production is unchanged until deliberately enabled.
+EXPLAIN_USE_GRAPH = os.getenv("EXPLAIN_USE_GRAPH", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+
+# Compiled lazily on first use so the langgraph dependency is only required when
+# the flag is actually enabled (import stays cheap and failure is localized).
+_explain_graph = None
+
+
+def _explain_model_caller(system_prompt: str, user_message: str):
+    """Injected into the explain graph: one Anthropic call -> (raw_text, usage)."""
+    client = anthropic_sdk.Anthropic(api_key=ANTHROPIC_API_KEY)
+    message = client.messages.create(
+        model=LOOKUP_MODEL,
+        max_tokens=CONTEXT_EXPLANATION_MAX_TOKENS,
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_message}],
+    )
+    raw = "".join(
+        block.text
+        for block in (message.content or [])
+        if getattr(block, "type", None) == "text"
+    ).strip()
+    return raw, getattr(message, "usage", None)
+
+
+def get_explain_graph():
+    global _explain_graph
+    if _explain_graph is None:
+        from explain_graph import build_explain_graph
+
+        _explain_graph = build_explain_graph(_explain_model_caller)
+    return _explain_graph
 
 
 def create_ops_tables(conn: sqlite3.Connection):
@@ -2415,6 +2479,28 @@ def zh_definition_gloss(definition: str | None) -> str | None:
     return short if short and len(short) <= 40 else None
 
 
+def zh_to_pinyin(text: str) -> str | None:
+    """Tone-marked pinyin for arbitrary Chinese text (e.g. 你好 -> "nǐ hǎo").
+
+    Returns None when pypinyin is unavailable or the text carries no Han
+    characters. Non-Han runs (punctuation, latin, digits) are dropped so the
+    result is pure pinyin — the panels show it without the source characters.
+    """
+    if _pypinyin is None or not isinstance(text, str) or not text.strip():
+        return None
+
+    syllables: list[str] = []
+    # heteronym=False keeps a single reading per character; Style.TONE gives the
+    # accented form (nǐ) rather than tone numbers (ni3).
+    for group in _pypinyin(text, style=_PinyinStyle.TONE, errors="ignore", heteronym=False):
+        token = (group[0] if group else "").strip()
+        if token:
+            syllables.append(token)
+
+    joined = " ".join(syllables).strip()
+    return joined or None
+
+
 def zh_dictionary_no_entry(
     stem: str,
     script: str,
@@ -2874,15 +2960,11 @@ async def _preprocess_zh_core(
     level_by_term = await loop.run_in_executor(None, lookup_chinese_hsk_levels, level_terms)
 
     if normalized_interface_language != "en":
-        results = [
-            {
-                **result,
-                "definition": None,
-                "gloss": None,
-                "interface_language": normalized_interface_language,
-            }
-            for result in results
-        ]
+        # CC-CEDICT is English-only. Translate the chapter's definitions into the
+        # interface language (reusing/caching per word) so the reader stores real
+        # definitions and lookups are instant — instead of nulling and paying a live
+        # translation on every tap.
+        results = await translate_and_cache_zh_preprocess(results, normalized_interface_language)
     results = [
         attach_proficiency_level(result, zh_level_for_result(result, level_by_term))
         for result in results
@@ -3006,6 +3088,184 @@ async def _translate_text(text: str, source: str = "en", target: str = "en") -> 
         return None
 
 
+async def _translate_batch(
+    texts: list[str],
+    source: str = "en",
+    target: str = "en",
+    batch_size: int = 100,
+) -> list[str | None]:
+    """Translate many strings in a few requests (the API takes `q` as an array and
+    returns translations in order). Returns a list aligned to `texts`; entries that
+    fail translate as None. Used to translate a whole chapter's zh definitions at once
+    instead of one HTTP call per word."""
+    normalized_source = source.strip() if isinstance(source, str) and source.strip() else "en"
+    normalized_target = target.strip() if isinstance(target, str) and target.strip() else "en"
+    if not texts or normalized_source == normalized_target or not GOOGLE_TRANSLATE_RAPIDAPI_KEY:
+        return [None] * len(texts)
+
+    chunks = [texts[start:start + batch_size] for start in range(0, len(texts), batch_size)]
+    # Cap concurrent requests so a big chapter translates in a few seconds (staying
+    # under the reader's preprocess timeout) without tripping the API's rate limit.
+    semaphore = asyncio.Semaphore(8)
+
+    async def translate_chunk(client: httpx.AsyncClient, chunk: list[str]) -> list[str | None]:
+        async with semaphore:
+            try:
+                response = await client.post(
+                    GOOGLE_TRANSLATE_RAPIDAPI_URL,
+                    headers={
+                        "content-type": "application/json",
+                        "X-RapidAPI-Key": GOOGLE_TRANSLATE_RAPIDAPI_KEY,
+                        "X-RapidAPI-Host": GOOGLE_TRANSLATE_RAPIDAPI_HOST,
+                    },
+                    json={
+                        "q": chunk,
+                        "source": normalized_source,
+                        "target": normalized_target,
+                        "format": "text",
+                    },
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                response_data = data.get("data", {}) if isinstance(data, dict) else {}
+                items = response_data.get("translations", []) if isinstance(response_data, dict) else []
+                chunk_out = [
+                    (item.get("translatedText") or "").strip() or None
+                    if isinstance(item, dict) else None
+                    for item in items
+                ]
+            except Exception as error:
+                print(f"[main] Batch translation failed: {error}")
+                chunk_out = []
+
+            # If the endpoint didn't return one translation per input (e.g. it doesn't
+            # honor an array `q`), fall back to translating this chunk item-by-item so
+            # results stay correct — just with more calls for that chunk.
+            if len(chunk_out) != len(chunk):
+                chunk_out = list(await asyncio.gather(*(
+                    _translate_text(text, source=normalized_source, target=normalized_target)
+                    for text in chunk
+                )))
+            return chunk_out[:len(chunk)]
+
+    async with httpx.AsyncClient() as client:
+        chunk_results = await asyncio.gather(*(translate_chunk(client, chunk) for chunk in chunks))
+
+    translated: list[str | None] = []
+    for chunk_out in chunk_results:
+        translated.extend(chunk_out)
+    return translated
+
+
+def _fetch_cached_zh_translations(stems: list[str], interface_language: str) -> dict[str, dict]:
+    """Translations we've already stored for these stems in this interface language,
+    so a word is only ever translated once (shared across books and users)."""
+    unique_stems = [stem for stem in dict.fromkeys(stems) if stem]
+    if not unique_stems:
+        return {}
+    conn = get_db_connection()
+    try:
+        placeholders = ",".join(["?"] * len(unique_stems))
+        rows = conn.execute(
+            f"""
+            SELECT stem, definition, gloss
+            FROM dictionary_cache
+            WHERE language = 'zh' AND interface_language = ? AND stem IN ({placeholders})
+            """,
+            [interface_language, *unique_stems],
+        ).fetchall()
+    finally:
+        conn.close()
+    return {
+        row["stem"]: {"definition": row["definition"], "gloss": row["gloss"]}
+        for row in rows
+        if row["definition"]
+    }
+
+
+def _store_zh_translations(entries: list[dict], interface_language: str) -> None:
+    if not entries:
+        return
+    conn = get_db_connection()
+    try:
+        conn.executemany(
+            """
+            INSERT INTO dictionary_cache (stem, language, interface_language, definition, gloss, ipa)
+            VALUES (?, 'zh', ?, ?, ?, ?)
+            ON CONFLICT(stem, language, interface_language) DO UPDATE SET
+                definition = excluded.definition,
+                gloss = excluded.gloss,
+                ipa = excluded.ipa,
+                last_updated = CURRENT_TIMESTAMP
+            """,
+            [
+                (entry["stem"], interface_language, entry["definition"], entry.get("gloss"), entry.get("pinyin"))
+                for entry in entries
+                if entry.get("stem") and entry.get("definition")
+            ],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+async def translate_and_cache_zh_preprocess(results: list[dict], interface_language: str) -> list[dict]:
+    """Translate a chapter's zh definitions into the interface language and persist
+    them, so the reader caches real (non-null) definitions and taps are instant. Reuses
+    already-translated words from the server cache and only translates the rest."""
+    normalized_lang = normalize_short_language_code(interface_language, "en")
+    if normalized_lang == "en":
+        return results
+
+    stems = [result.get("stem") for result in results]
+    cached = _fetch_cached_zh_translations(stems, normalized_lang)
+
+    pending_indices: list[int] = []
+    for index, result in enumerate(results):
+        stem = result.get("stem")
+        hit = cached.get(stem) if stem else None
+        if hit and hit.get("definition"):
+            results[index] = {
+                **result,
+                "definition": hit["definition"],
+                "gloss": hit.get("gloss") or zh_definition_gloss(hit["definition"]),
+                "interface_language": normalized_lang,
+            }
+        elif result.get("definition"):
+            pending_indices.append(index)
+        else:
+            results[index] = {**result, "interface_language": normalized_lang}
+
+    if pending_indices:
+        translations = await _translate_batch(
+            [results[index]["definition"] for index in pending_indices],
+            source="en",
+            target=normalized_lang,
+        )
+        fresh: list[dict] = []
+        for index, translated in zip(pending_indices, translations):
+            result = results[index]
+            new_definition = translated or result["definition"]
+            new_gloss = zh_definition_gloss(new_definition)
+            results[index] = {
+                **result,
+                "definition": new_definition,
+                "gloss": new_gloss,
+                "interface_language": normalized_lang,
+            }
+            if translated:
+                fresh.append({
+                    "stem": result.get("stem"),
+                    "definition": new_definition,
+                    "gloss": new_gloss,
+                    "pinyin": result.get("pinyin"),
+                })
+        _store_zh_translations(fresh, normalized_lang)
+
+    return results
+
+
 @app.post("/translate/")
 async def translate_text(payload: dict, auth: dict[str, Any] = Depends(verify_supabase_token)):
     query = payload.get("query", payload.get("q", ""))
@@ -3068,7 +3328,15 @@ async def translate_text(payload: dict, auth: dict[str, Any] = Depends(verify_su
     else:
         translated_text = ""
 
-    return {"translatedText": translated_text}
+    # For Chinese source text the panels show tone-marked pinyin above the
+    # translation (no source characters), so hand it back alongside the text.
+    pinyin = (
+        zh_to_pinyin(cleaned_query)
+        if isinstance(source, str) and source.strip().lower().startswith("zh")
+        else None
+    )
+
+    return {"translatedText": translated_text, "pinyin": pinyin}
 
 
 # ─── Bundled KRDICT Snapshot (offline) ────────────────────────────────────────
@@ -4243,6 +4511,43 @@ def parse_contextual_explanation(raw: str) -> dict[str, str | None]:
     }
 
 
+# Bounds on client-supplied known-word anchors, to keep the prompt small and
+# resist a hostile client stuffing the model context.
+_MAX_ANCHOR_WORDS = 6
+_MAX_ANCHOR_FIELD_LEN = 40
+
+
+def _sanitize_anchor_words(raw) -> list[dict]:
+    """Coerce the payload's anchor_words into a clean [{word, gloss}] list.
+
+    Non-list input, non-dict items, and empty words are dropped; word/gloss are
+    trimmed to _MAX_ANCHOR_FIELD_LEN and the list is capped at _MAX_ANCHOR_WORDS.
+    """
+    if not isinstance(raw, list):
+        return []
+    cleaned: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        word = item.get("word") or item.get("lemma")
+        word = word.strip()[:_MAX_ANCHOR_FIELD_LEN] if isinstance(word, str) else ""
+        if not word:
+            continue
+        gloss = item.get("gloss")
+        gloss = gloss.strip()[:_MAX_ANCHOR_FIELD_LEN] if isinstance(gloss, str) else ""
+        cleaned.append({"word": word, "gloss": gloss})
+        if len(cleaned) >= _MAX_ANCHOR_WORDS:
+            break
+    return cleaned
+
+
+def _coerce_grounding_number(value):
+    """Accept only real (non-bool) numbers from the payload; else None."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
+
+
 @app.post("/explain_in_context/")
 async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verify_supabase_token)):
     if not anthropic_sdk:
@@ -4270,13 +4575,37 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
 
     await enforce_daily_quota(auth)
 
-    # Serve identical (word, sentence, language-pair) lookups from cache without
-    # calling the model — kills repeated-input abuse and cheap re-reads. The
-    # explanation is context-specific, so a different sentence is a cache miss.
+    # Grounding signals (all optional; absent -> behaves like the ungrounded path).
+    # These are device-authoritative, so they ride in the payload rather than being
+    # read back from Supabase. p_known (the client's cached per-word P(known)) is the
+    # preferred familiarity signal; theta + word_difficulty is the fallback.
+    p_known = _coerce_grounding_number(payload.get("p_known"))
+    if p_known is not None:
+        p_known = max(0.0, min(1.0, p_known))
+    theta = _coerce_grounding_number(payload.get("theta"))
+    word_difficulty = _coerce_grounding_number(payload.get("word_difficulty"))
+    if p_known is None:
+        p_known = p_known_for(theta, word_difficulty)
+    hanja = payload.get("hanja")
+    hanja = hanja.strip() if isinstance(hanja, str) and hanja.strip() else None
+    anchor_words = _sanitize_anchor_words(payload.get("anchor_words"))
+
+    # Known-word anchors are per-learner, so an anchored explanation must never be
+    # shared through the global cache.
+    personalized = bool(anchor_words)
+
+    # Serve identical lookups from cache without calling the model — kills
+    # repeated-input abuse and cheap re-reads. The explanation is context-specific
+    # (a different sentence is a cache miss); under the graph it is also calibrated
+    # to the learner's familiarity, so the coarse familiarity bucket joins the key.
     cache_key = lookup_cache_key(word, sentence, target_language, interface_language)
-    cached = await asyncio.to_thread(_lookup_cache_get, cache_key)
-    if cached is not None:
-        return cached
+    if EXPLAIN_USE_GRAPH:
+        cache_key = f"{cache_key}:{familiarity_from_p_known(p_known)}"
+
+    if not personalized:
+        cached = await asyncio.to_thread(_lookup_cache_get, cache_key)
+        if cached is not None:
+            return cached
 
     # Only reached on a cache miss — i.e. we're about to spend on the model.
     # Charge this lookup against the user's daily tier allowance before spending.
@@ -4285,36 +4614,74 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
 
     target_language_name = LANGUAGE_DISPLAY_NAMES.get(target_language, target_language.upper())
     interface_language_name = LANGUAGE_DISPLAY_NAMES.get(interface_language, "English")
-    system_prompt = build_contextual_explanation_prompt(target_language_name, interface_language_name)
-    user_message = f"Word: {word}\n\nSentence: {sentence}"
 
-    try:
-        client = anthropic_sdk.Anthropic(api_key=ANTHROPIC_API_KEY)
-        message = client.messages.create(
-            model=LOOKUP_MODEL,
-            max_tokens=CONTEXT_EXPLANATION_MAX_TOKENS,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
-    except Exception as error:
-        print(f"[explain_in_context] Anthropic API error: {error.__class__.__name__}: {error}")
-        raise HTTPException(status_code=502, detail="AI explanation service is temporarily unavailable")
+    if EXPLAIN_USE_GRAPH:
+        try:
+            graph = get_explain_graph()
+            result = await asyncio.to_thread(
+                run_explain_graph,
+                graph,
+                word=word,
+                sentence=sentence,
+                target_language_name=target_language_name,
+                interface_language_name=interface_language_name,
+                p_known=p_known,
+                theta=theta,
+                word_difficulty=word_difficulty,
+                hanja=hanja,
+                anchor_words=anchor_words,
+            )
+        except Exception as error:
+            print(f"[explain_in_context] Graph workflow error: {error.__class__.__name__}: {error}")
+            raise HTTPException(status_code=502, detail="AI explanation service is temporarily unavailable")
 
-    await record_ai_spend(LOOKUP_MODEL, getattr(message, "usage", None))
+        # One spend record per model call the graph made (draft + any refine).
+        for usage in result.get("usages", []):
+            await record_ai_spend(LOOKUP_MODEL, usage)
 
-    raw = "".join(
-        block.text for block in (message.content or []) if getattr(block, "type", None) == "text"
-    ).strip()
+        parsed = {
+            "explanation": result.get("explanation"),
+            "gloss": result.get("gloss"),
+            "lemma": result.get("lemma"),
+        }
+    else:
+        system_prompt = build_contextual_explanation_prompt(target_language_name, interface_language_name)
+        user_message = f"Word: {word}\n\nSentence: {sentence}"
 
-    if not raw:
-        raise HTTPException(status_code=502, detail="AI returned an empty explanation")
+        try:
+            client = anthropic_sdk.Anthropic(api_key=ANTHROPIC_API_KEY)
+            message = client.messages.create(
+                model=LOOKUP_MODEL,
+                max_tokens=CONTEXT_EXPLANATION_MAX_TOKENS,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+        except Exception as error:
+            print(f"[explain_in_context] Anthropic API error: {error.__class__.__name__}: {error}")
+            raise HTTPException(status_code=502, detail="AI explanation service is temporarily unavailable")
 
-    parsed = parse_contextual_explanation(raw)
+        await record_ai_spend(LOOKUP_MODEL, getattr(message, "usage", None))
+
+        raw = "".join(
+            block.text for block in (message.content or []) if getattr(block, "type", None) == "text"
+        ).strip()
+
+        if not raw:
+            raise HTTPException(status_code=502, detail="AI returned an empty explanation")
+
+        parsed = parse_contextual_explanation(raw)
 
     if not parsed["explanation"]:
         raise HTTPException(status_code=502, detail="AI returned an empty explanation")
 
-    await asyncio.to_thread(_lookup_cache_put, cache_key, parsed)
+    # Chinese: attach tone-marked pinyin for the base form (falling back to the
+    # tapped word) so the panel can show it next to the gloss and the learner can
+    # save pinyin + definition together. Computed here so it rides the cache too.
+    if target_language == "zh":
+        parsed["pinyin"] = zh_to_pinyin(parsed.get("lemma") or word)
+
+    if not personalized:
+        await asyncio.to_thread(_lookup_cache_put, cache_key, parsed)
 
     return parsed
 

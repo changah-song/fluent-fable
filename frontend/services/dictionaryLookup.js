@@ -155,6 +155,10 @@ const liveEntryToCacheEntry = (
     ipa: normalizeBookLanguage(targetLanguage) === 'zh'
         ? nullableValue(entry?.pinyin) || nullableValue(entry?.ipa)
         : nullableValue(entry?.ipa),
+    // Chinese carries both headword forms so the panel can show Simplified +
+    // Traditional regardless of the book's script.
+    simplified: normalizeBookLanguage(targetLanguage) === 'zh' ? nullableValue(entry?.simplified) : null,
+    traditional: normalizeBookLanguage(targetLanguage) === 'zh' ? nullableValue(entry?.traditional) : null,
     audio_us: normalizeBookLanguage(targetLanguage) === 'en' ? nullableValue(entry?.audio_us) : null,
     audio_uk: normalizeBookLanguage(targetLanguage) === 'en' ? nullableValue(entry?.audio_uk) : null,
     etymology: normalizeBookLanguage(targetLanguage) === 'en' ? nullableValue(entry?.etymology) : null,
@@ -170,6 +174,9 @@ const cacheEntryToDefinitionEntry = (entry, fallbackWord) => ({
     hanja: nullableValue(entry?.hanja),
     pos: nullableValue(entry?.pos),
     romanization: nullableValue(entry?.romanization) || nullableValue(entry?.pinyin) || nullableValue(entry?.ipa),
+    pinyin: nullableValue(entry?.pinyin) || nullableValue(entry?.ipa),
+    simplified: nullableValue(entry?.simplified),
+    traditional: nullableValue(entry?.traditional),
     audio_us: nullableValue(entry?.audio_us),
     audio_uk: nullableValue(entry?.audio_uk),
     wordParts: entry?.word_parts ?? entry?.wordParts ?? null,
@@ -184,6 +191,9 @@ const liveEntryToDefinitionEntry = (entry, fallbackWord, targetLanguage = getRun
         : null,
     pos: nullableValue(entry?.pos),
     romanization: nullableValue(entry?.romanization) || nullableValue(entry?.pinyin) || nullableValue(entry?.ipa),
+    pinyin: nullableValue(entry?.pinyin) || nullableValue(entry?.ipa),
+    simplified: nullableValue(entry?.simplified),
+    traditional: nullableValue(entry?.traditional),
     audio_us: nullableValue(entry?.audio_us),
     audio_uk: nullableValue(entry?.audio_uk),
     wordParts: entry?.word_parts ?? entry?.wordParts ?? null,

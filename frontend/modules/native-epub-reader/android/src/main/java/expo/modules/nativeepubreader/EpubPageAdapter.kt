@@ -14,6 +14,7 @@ class EpubPageAdapter(
   private var activeSelectionKind: ActiveSelectionKind?,
   private var savedHighlightRangesByPage: Map<Int, List<TextRange>>,
   private var levelRangesByPage: Map<Int, List<TextRange>>,
+  private var showPinyin: Boolean,
   private var activeHighlightColor: Int,
   private var textSelectionHighlightColor: Int,
   private var savedHighlightColor: Int,
@@ -71,6 +72,14 @@ class EpubPageAdapter(
 
   fun updateSavedHighlightRanges(rangesByPage: Map<Int, List<TextRange>>) {
     savedHighlightRangesByPage = rangesByPage
+  }
+
+  fun setShowPinyin(enabled: Boolean) {
+    if (showPinyin == enabled) {
+      return
+    }
+    showPinyin = enabled
+    notifyDataSetChanged()
   }
 
   fun updateLevelUnderlineRanges(rangesByPage: Map<Int, List<TextRange>>) {
@@ -164,7 +173,8 @@ class EpubPageAdapter(
       onTextSelected = onTextSelected,
       onSelectionCleared = onSelectionCleared,
       onSelectionDragStateChanged = onSelectionDragStateChanged,
-      onEdgeAction = onEdgeAction
+      onEdgeAction = onEdgeAction,
+      showPinyin = showPinyin
     )
   }
 

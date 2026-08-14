@@ -90,6 +90,8 @@ const getEntryPos = (entry) => cleanValue(entry?.pos);
 const getEntryRomanization = (entry) => cleanValue(entry?.romanization);
 const getEntryIpa = (entry) => cleanValue(entry?.ipa);
 const getEntryPinyin = (entry) => cleanValue(entry?.pinyin) || getEntryIpa(entry);
+const getEntrySimplified = (entry) => cleanValue(entry?.simplified);
+const getEntryTraditional = (entry) => cleanValue(entry?.traditional);
 
 // CC-CEDICT packs a reading's senses into one string joined by "; ". Split them so
 // the panel can number multiple meanings.
@@ -312,6 +314,19 @@ const isLikelyUntranslatedEnglishDefinition = (definition, interfaceLanguage) =>
 };
 const getRelatedKnownWordKey = (entry) => `${entry?.korean ?? ''}|${entry?.hanja ?? ''}`;
 
+// Shape a learner's related-known-words into the backend's anchor_words contract
+// ({ word, gloss }) for the agentic explanation workflow. These are words the
+// learner has confirmed they know that share a hanja with the tapped word — the
+// cross-language bridge the grounded prompt can anchor an analogy to.
+const toAnchorWords = (relatedKnownWords = []) => (
+    (Array.isArray(relatedKnownWords) ? relatedKnownWords : [])
+        .map((entry) => ({
+            word: cleanValue(entry?.korean) || cleanValue(entry?.word),
+            gloss: cleanValue(entry?.definition) || cleanValue(entry?.gloss),
+        }))
+        .filter((entry) => entry.word)
+);
+
 const formatPos = (pos, t) => {
     const normalized = cleanValue(pos).replace(/\s+/g, ' ');
     if (!normalized) {
@@ -406,7 +421,7 @@ const DictionaryContent = ({
     sourceBook,
     savedWords = [],
 }) => {
-    const { interfaceLanguage } = useAppContext();
+    const { interfaceLanguage, activeProfileId } = useAppContext();
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -458,8 +473,27 @@ const DictionaryContent = ({
         setExplainData({});
     }, [highlightedWord, contextSentence]);
 
-    const fetchExplanation = useCallback(async (key) => {
+    const fetchExplanation = useCallback(async (key, grounding = {}) => {
         setExplainData((prev) => ({ ...prev, [key]: { loading: true, text: '', error: null } }));
+
+        // Grounding for the agentic backend workflow. The tapped word's hanja and
+        // known-word anchors are gathered at the call site (they depend on
+        // later-declared render values); P(known) is read here from the cache.
+        let pKnown;
+        try {
+            const cached = await getCachedPKnown({
+                ownerId: activeOwnerId,
+                profileId: activeProfileId,
+                language: targetLanguage,
+                word: key,
+            });
+            if (Number.isFinite(cached)) {
+                pKnown = cached;
+            }
+        } catch (pKnownError) {
+            // Grounding is best-effort; a missing P(known) just means a neutral prompt.
+            console.warn('[DictionaryContent] getCachedPKnown failed:', pKnownError?.message ?? pKnownError);
+        }
 
         try {
             const response = await explainInContext({
@@ -467,15 +501,19 @@ const DictionaryContent = ({
                 sentence: contextSentence,
                 language: targetLanguage,
                 interfaceLanguage,
+                pKnown,
+                hanja: grounding.hanja,
+                anchorWords: grounding.anchorWords,
             });
             const text = cleanValue(response?.explanation);
             const gloss = cleanValue(response?.gloss);
             const lemma = cleanValue(response?.lemma);
+            const pinyin = cleanValue(response?.pinyin);
             setExplainData((prev) => ({
                 ...prev,
                 [key]: text
-                    ? { loading: false, text, gloss, lemma, error: null }
-                    : { loading: false, text: '', gloss: '', lemma: '', error: t('lookup.explainFailed') },
+                    ? { loading: false, text, gloss, lemma, pinyin, error: null }
+                    : { loading: false, text: '', gloss: '', lemma: '', pinyin: '', error: t('lookup.explainFailed') },
             }));
         } catch (error) {
             setExplainData((prev) => ({
@@ -483,11 +521,12 @@ const DictionaryContent = ({
                 [key]: { loading: false, text: '', error: error?.message || t('lookup.explainFailed') },
             }));
         }
-    }, [contextSentence, targetLanguage, interfaceLanguage, t]);
+    }, [contextSentence, targetLanguage, interfaceLanguage, activeOwnerId, activeProfileId, t]);
 
     // Toggle the smart-definition panel mode. Entering it kicks off the fetch (if
-    // not already cached/in-flight) and leaves translation mode.
-    const handleSmartDefinitionPress = useCallback((word) => {
+    // not already cached/in-flight) and leaves translation mode. `grounding`
+    // ({ hanja, anchorWords }) is gathered by the caller from render-time values.
+    const handleSmartDefinitionPress = useCallback((word, grounding = {}) => {
         const key = cleanValue(word);
         if (!key || !contextSentence) {
             return;
@@ -505,7 +544,7 @@ const DictionaryContent = ({
         if (existing && (existing.loading || existing.text)) {
             return; // already fetched or in flight
         }
-        fetchExplanation(key);
+        fetchExplanation(key, grounding);
     }, [explainMode, explainData, contextSentence, fetchExplanation]);
 
     const [drilldownStack, setDrilldownStack] = useState([]);
@@ -916,6 +955,9 @@ const DictionaryContent = ({
     const canExpandCurrentLookup = (
         (isKoreanBook && hasHanja(activeLookupHanja))
         || (isEnglishBook && hasRenderableWordParts(activeLookupDetails.wordParts, activeLookupDetails.word))
+        // Chinese: expanding loads the word's other pronunciations (heteronyms); the
+        // collapsed panel already shows the primary reading from cache.
+        || (isChineseBook && Boolean(activeLookupDetails.word))
     );
 
     useEffect(() => {
@@ -937,13 +979,15 @@ const DictionaryContent = ({
 
     useEffect(() => {
         const entry = activeLookupItem?.cachedEntry;
-        if (!isPanelExpanded || !entry?.definition || extraDefs[entry.stem] !== undefined) {
+        // Chinese has its own expand fetch (zhReadings) and renders from it, not from
+        // extraDefs — so skip this one for zh to avoid a duplicate /zh_dict_search/.
+        if (isChineseBook || !isPanelExpanded || !entry?.definition || extraDefs[entry.stem] !== undefined) {
             return;
         }
 
         prefetchExtra(entry.stem);
         setExpandedCached(prev => ({ ...prev, [entry.stem]: true }));
-    }, [activeLookupItem, extraDefs, isPanelExpanded]);
+    }, [activeLookupItem, extraDefs, isChineseBook, isPanelExpanded]);
 
     // Fetch every reading of a Chinese word from /zh_dict_search/ (the cache only
     // holds the top one) into zhReadings, once per word.
@@ -966,10 +1010,12 @@ const DictionaryContent = ({
             .catch(() => setZhReadings((prev) => ({ ...prev, [word]: [] })));
     };
 
-    // Chinese: eagerly load the tapped word's readings so the panel shows every
-    // pronunciation + numbered senses at a glance, no expand needed.
+    // Chinese: the cached entry already gives the primary reading + numbered senses
+    // instantly (no network). Only when the user expands the panel do we hit
+    // /zh_dict_search/ for the *other* pronunciations — so a normal tap stays as fast
+    // as Korean instead of paying a round-trip every time.
     useEffect(() => {
-        if (!isChineseBook) {
+        if (!isChineseBook || !isPanelExpanded) {
             return;
         }
         const entry = activeLookupItem?.cachedEntry;
@@ -977,7 +1023,7 @@ const DictionaryContent = ({
             ? getEntryWord(entry, activeLookupItem.stem || lookupWord)
             : (activeLookupItem?.stem || lookupWord);
         fetchZhReadings(word);
-    }, [isChineseBook, activeLookupItem, lookupWord]);
+    }, [isChineseBook, isPanelExpanded, activeLookupItem, lookupWord]);
 
     // Follow "variant of X" / "see X" references: fetch X so its real definition can
     // stand in for the bare pointer. Runs as readings arrive (backend may already have
@@ -1152,16 +1198,20 @@ const DictionaryContent = ({
     // contractions like 설워하다). The caller passes the AI-stemmed base form (with a
     // surface fallback) as the headword, and we tag it `source: 'ai'` so the
     // saved-words list can badge it as AI-explained.
-    const saveWithAiDefinition = async (headword, gloss) => {
+    const saveWithAiDefinition = async (headword, gloss, pinyin = '') => {
         const wordToSave = cleanValue(headword);
         const def = cleanValue(gloss);
         if (!wordToSave || !def) {
             return;
         }
+        // For Chinese we carry the pinyin in the origin/hanja slot (zh has no hanja),
+        // so the saved card keeps both the reading and the definition — the vocab
+        // list, flashcard, and saved panel all render that slot under the headword.
+        const origin = isChineseBook ? cleanValue(pinyin) : '';
         if (isWordSaved(wordToSave)) {
-            await toggleUnSave(wordToSave, '', def);
+            await toggleUnSave(wordToSave, origin, def);
         } else {
-            await toggleSave(wordToSave, '', def, { source: 'ai' });
+            await toggleSave(wordToSave, origin, def, { source: 'ai' });
         }
     };
 
@@ -1494,6 +1544,8 @@ const DictionaryContent = ({
         romanization,
         ipa,
         pinyin,
+        simplified,
+        traditional,
         audioUs,
         audioUk,
     }) => {
@@ -1503,7 +1555,7 @@ const DictionaryContent = ({
         return (
             <View style={[styles.panelContent, styles.dictionaryPanelContent, { backgroundColor: palette.surface }]}>
                 <View style={styles.translationPanelBody}>
-                    {renderEntryHeading({ word, hanja, definition, pos, romanization, ipa, pinyin, audioUs, audioUk })}
+                    {renderEntryHeading({ word, hanja, definition, pos, romanization, ipa, pinyin, simplified, traditional, audioUs, audioUk })}
                     <Text style={styles.translationSectionTitle}>{t('lookup.translate')}</Text>
                     <View style={styles.translationContentWrap}>
                         <TranslationContent
@@ -1608,7 +1660,7 @@ const DictionaryContent = ({
         );
     };
 
-    const renderEntryHeading = ({ word, hanja, definition, pos, romanization, ipa, pinyin, audioUs, audioUk }) => {
+    const renderEntryHeading = ({ word, hanja, definition, pos, romanization, ipa, pinyin, simplified, traditional, audioUs, audioUk }) => {
         const sourceWordDetails = buildSourceWordDetails({ hanja, definition });
         const hanjaElement = isKoreanBook ? renderHanja(hanja, 'entry', word, sourceWordDetails) : null;
         const romanizationText = cleanValue(romanization);
@@ -1616,6 +1668,16 @@ const DictionaryContent = ({
         const pinyinText = cleanValue(pinyin);
         const pronunciationText = isEnglishBook ? ipaText : (isChineseBook ? pinyinText : romanizationText);
         const pronunciationControls = renderPronunciationControls({ word, audioUs, audioUk });
+
+        // Chinese shows BOTH headword forms so the reader sees the word in whichever
+        // script they didn't tap. Only rendered when the two forms actually differ
+        // (many words are identical across Simplified/Traditional).
+        const simplifiedText = cleanValue(simplified);
+        const traditionalText = cleanValue(traditional);
+        const showBothScripts = isChineseBook
+            && simplifiedText
+            && traditionalText
+            && simplifiedText !== traditionalText;
 
         return (
             <View style={styles.entryHeading}>
@@ -1641,6 +1703,18 @@ const DictionaryContent = ({
                     </View>
                     {renderHeadwordChevron('next')}
                 </View>
+                {showBothScripts ? (
+                    <View style={styles.zhScriptsRow}>
+                        <View style={styles.zhScriptItem}>
+                            <Text style={[styles.zhScriptLabel, { color: palette.mutedText }]}>简</Text>
+                            <Text selectable style={[styles.zhScriptForm, { color: palette.secondaryText }]}>{simplifiedText}</Text>
+                        </View>
+                        <View style={styles.zhScriptItem}>
+                            <Text style={[styles.zhScriptLabel, { color: palette.mutedText }]}>繁</Text>
+                            <Text selectable style={[styles.zhScriptForm, { color: palette.secondaryText }]}>{traditionalText}</Text>
+                        </View>
+                    </View>
+                ) : null}
                 {pronunciationControls ? (
                     <View style={styles.entryMetaRow}>
                         {pronunciationControls}
@@ -1901,6 +1975,9 @@ const DictionaryContent = ({
         // model returns none), so title and flashcard both show a clean headword.
         const saveWord = explainHeadword;
         const glossText = cleanValue(data.gloss);
+        // Chinese: the AI-attached pinyin sits next to the definition and is saved
+        // alongside it (empty for other target languages).
+        const pinyinText = isChineseBook ? cleanValue(data.pinyin) : '';
         const hasGloss = !data.loading && !!data.text && !!glossText;
         const aiSaved = hasGloss && isWordSaved(saveWord);
 
@@ -1908,12 +1985,19 @@ const DictionaryContent = ({
             <View style={styles.explainSection}>
                 {hasGloss ? (
                     <View style={styles.explainGlossRow}>
-                        <Text selectable style={[styles.explainGloss, { color: palette.text }]}>
-                            {glossText}
-                        </Text>
+                        <View style={styles.explainGlossTextWrap}>
+                            {pinyinText ? (
+                                <Text selectable style={[styles.explainGlossPinyin, { color: palette.mutedText }]}>
+                                    {pinyinText}
+                                </Text>
+                            ) : null}
+                            <Text selectable style={[styles.explainGloss, { color: palette.text }]}>
+                                {glossText}
+                            </Text>
+                        </View>
                         <TouchableOpacity
                             style={[styles.aiSaveButton, aiSaved ? styles.actionButtonSaved : null]}
-                            onPress={() => saveWithAiDefinition(saveWord, glossText)}
+                            onPress={() => saveWithAiDefinition(saveWord, glossText, pinyinText)}
                             activeOpacity={0.7}
                             accessibilityRole="button"
                             accessibilityLabel={aiSaved ? t('lookup.saved') : t('lookup.saveAiDefinition')}
@@ -1971,7 +2055,10 @@ const DictionaryContent = ({
         return (
             <TouchableOpacity
                 style={[styles.actionButton, explainMode ? styles.actionButtonRightActive : null]}
-                onPress={() => handleSmartDefinitionPress(explainKey)}
+                onPress={() => handleSmartDefinitionPress(explainKey, {
+                    hanja: activeLookupHanja || null,
+                    anchorWords: toAnchorWords(relatedKnownByWord[explainKey]),
+                })}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityState={{ expanded: explainMode }}
@@ -2118,6 +2205,8 @@ const DictionaryContent = ({
         romanization,
         ipa,
         pinyin,
+        simplified,
+        traditional,
         audioUs,
         audioUk,
         etymology,
@@ -2149,7 +2238,7 @@ const DictionaryContent = ({
 
         return (
             <View key={key} style={[styles.primaryEntry, separated && { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                {renderEntryHeading({ word: headingWord, hanja, definition, pos, romanization, ipa, pinyin: headingPinyin, audioUs, audioUk })}
+                {renderEntryHeading({ word: headingWord, hanja, definition, pos, romanization, ipa, pinyin: headingPinyin, simplified: explainMode ? null : simplified, traditional: explainMode ? null : traditional, audioUs, audioUk })}
                 {explainMode ? renderExplainBodySection() : (
                     isChineseBook ? (
                         <View style={styles.zhBody}>
@@ -2292,6 +2381,8 @@ const DictionaryContent = ({
                 romanization: romanizations[stem] || getEntryRomanization(liveMeta),
                 ipa: getEntryIpa(cachedEntry) || getEntryIpa(liveMeta),
                 pinyin: getEntryPinyin(cachedEntry) || getEntryPinyin(liveMeta),
+                simplified: getEntrySimplified(cachedEntry) || getEntrySimplified(liveMeta),
+                traditional: getEntryTraditional(cachedEntry) || getEntryTraditional(liveMeta),
                 audioUs: getEntryAudioUs(cachedEntry) || getEntryAudioUs(liveMeta),
                 audioUk: getEntryAudioUk(cachedEntry) || getEntryAudioUk(liveMeta),
             });
@@ -2310,6 +2401,8 @@ const DictionaryContent = ({
                     romanization: romanizations[stem] || getEntryRomanization(liveMeta),
                     ipa: getEntryIpa(cachedEntry) || getEntryIpa(liveMeta),
                     pinyin: getEntryPinyin(cachedEntry) || getEntryPinyin(liveMeta),
+                    simplified: getEntrySimplified(cachedEntry) || getEntrySimplified(liveMeta),
+                    traditional: getEntryTraditional(cachedEntry) || getEntryTraditional(liveMeta),
                     audioUs: getEntryAudioUs(cachedEntry) || getEntryAudioUs(liveMeta),
                     audioUk: getEntryAudioUk(cachedEntry) || getEntryAudioUk(liveMeta),
                     etymology: getEntryEtymology(cachedEntry) || getEntryEtymology(liveMeta),
@@ -2359,6 +2452,8 @@ const DictionaryContent = ({
             romanization: romanizations[word] || getEntryRomanization(first),
             ipa: getEntryIpa(first),
             pinyin: getEntryPinyin(first),
+            simplified: getEntrySimplified(first),
+            traditional: getEntryTraditional(first),
             audioUs: getEntryAudioUs(first),
             audioUk: getEntryAudioUk(first),
         });
@@ -2376,6 +2471,8 @@ const DictionaryContent = ({
                 romanization: romanizations[word] || getEntryRomanization(first),
                 ipa: getEntryIpa(first),
                 pinyin: getEntryPinyin(first),
+                simplified: getEntrySimplified(first),
+                traditional: getEntryTraditional(first),
                 audioUs: getEntryAudioUs(first),
                 audioUk: getEntryAudioUk(first),
                 etymology: getEntryEtymology(first),
@@ -2698,6 +2795,32 @@ const createStyles = (colors) => StyleSheet.create({
         letterSpacing: 0.2,
         textAlign: 'left',
     },
+    // Row under the headword showing the word in BOTH scripts (Simplified +
+    // Traditional), each with a small 简/繁 label, shown only when the forms differ.
+    zhScriptsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        columnGap: 16,
+        rowGap: 2,
+        marginTop: 4,
+    },
+    zhScriptItem: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        columnGap: 5,
+    },
+    zhScriptLabel: {
+        fontFamily: fontFamilies.sansSemiBold,
+        fontSize: 12,
+        lineHeight: 20,
+    },
+    zhScriptForm: {
+        fontFamily: fontFamilies.sansSemiBold,
+        fontSize: 17,
+        lineHeight: 24,
+    },
     zhBody: {
         width: '100%',
         paddingTop: 4,
@@ -2780,8 +2903,16 @@ const createStyles = (colors) => StyleSheet.create({
         justifyContent: 'space-between',
         gap: 12,
     },
-    explainGloss: {
+    explainGlossTextWrap: {
         flex: 1,
+        gap: 2,
+    },
+    explainGlossPinyin: {
+        fontFamily: fontFamilies.sansSemiBold,
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    explainGloss: {
         fontFamily: fontFamilies.sansBold,
         fontSize: 17,
         lineHeight: 24,

@@ -60,7 +60,13 @@ data class TextRange(
   // Level-underline shading position in [0, 1] (0 = nearly known, 1 = well above
   // the reader). Null for every other range kind — selections and saved
   // highlights take their color from the palette, not from a gradient.
-  val levelWeight: Float? = null
+  val levelWeight: Float? = null,
+  // Pinyin for this word, drawn above it when the reader's pinyin toggle is on
+  // (Chinese only). Null for every non-level range and when no reading is known.
+  val pinyin: String? = null,
+  // §8: this word is hard but frequent enough that the book will reteach it, so it is
+  // shaded with a calmer tone than a hard+rare ("study") word. Level ranges only.
+  val levelReinforced: Boolean = false
 )
 
 // A focused sentence span in focus (sentence beam) mode. Offsets are local to

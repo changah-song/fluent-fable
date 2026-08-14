@@ -76,9 +76,9 @@ import {
 import {
     difficultyFromLevelRank,
     exposureDwellIsPlausible,
-    levelUnderlineWeight,
     lowestUnderlinedRank,
     pKnown,
+    underlineCategory,
 } from '../services/abilityModel';
 import { createNativeReaderThemeTokens, radii, spacing, textStyles, useTheme } from '../theme';
 
@@ -94,6 +94,9 @@ const DEFAULT_READER_SETTINGS = {
     focusSwipe: false,
     readingMode: 'paged',
     levelMarkStyle: 'underline',
+    // Chinese only: draw pinyin above underlined (graded) words. Loosens line
+    // spacing when on, so it re-paginates. Ignored for non-Chinese books.
+    pinyinAnnotations: false,
 };
 const READING_MODES = ['paged', 'scroll'];
 // Whether graded words get a solid gradient underline. 'off' hides the marks but
@@ -229,7 +232,13 @@ const buildLevelUnderlineTerms = (rows, language, theta) => {
         return [];
     }
 
-    const surfaceRanks = new Map();
+    // Per surface keep its hardest rank (conservative) AND that stem's in-book
+    // occurrence count (stem_count, from the window function) — the §8 "future
+    // exposure" signal that splits hard words into study vs reinforced.
+    const surfaceInfo = new Map();
+    // Pinyin (dc.ipa for zh) rides along so the native reader can annotate underlined
+    // words. Only present for Chinese; harmless (unused) for other languages.
+    const surfacePinyin = new Map();
     (rows || []).forEach((row) => {
         const surface = typeof row?.surface === 'string' ? row.surface.trim() : '';
         const rank = Number(row?.level_rank ?? row?.proficiency_rank);
@@ -237,28 +246,40 @@ const buildLevelUnderlineTerms = (rows, language, theta) => {
             return;
         }
 
-        const previousRank = surfaceRanks.get(surface);
-        if (!Number.isFinite(previousRank) || rank > previousRank) {
-            surfaceRanks.set(surface, rank);
+        const pinyin = typeof row?.ipa === 'string' ? row.ipa.trim() : '';
+        if (pinyin && !surfacePinyin.has(surface)) {
+            surfacePinyin.set(surface, pinyin);
+        }
+
+        const count = Number(row?.stem_count);
+        const previous = surfaceInfo.get(surface);
+        if (!previous || rank > previous.rank) {
+            surfaceInfo.set(surface, { rank, count: Number.isFinite(count) ? count : 0 });
         }
     });
 
-    // Difficulty depends only on the rank, and there are at most 7 ranks, so
-    // memoize the per-rank weight instead of recomputing a sigmoid per surface.
-    const weightByRank = new Map();
-    const weightForRank = (rank) => {
-        if (!weightByRank.has(rank)) {
-            const difficulty = difficultyFromLevelRank(language, rank);
-            weightByRank.set(rank, levelUnderlineWeight(pKnown(theta, difficulty)));
+    // P(known) depends only on the rank, and there are at most 7 ranks, so memoize it
+    // per rank instead of recomputing a sigmoid per surface. underlineCategory turns
+    // (P, remaining count) into { weight, category } — same weight as before, plus the
+    // study/reinforced split.
+    const pKnownByRank = new Map();
+    const pKnownForRank = (rank) => {
+        if (!pKnownByRank.has(rank)) {
+            pKnownByRank.set(rank, pKnown(theta, difficultyFromLevelRank(language, rank)));
         }
-        return weightByRank.get(rank);
+        return pKnownByRank.get(rank);
     };
 
     const terms = [];
-    surfaceRanks.forEach((rank, surface) => {
-        const weight = weightForRank(rank);
-        if (weight != null) {
-            terms.push({ text: surface, weight });
+    surfaceInfo.forEach(({ rank, count }, surface) => {
+        const shade = underlineCategory(pKnownForRank(rank), count);
+        if (shade != null) {
+            const term = { text: surface, weight: shade.weight, category: shade.category };
+            const pinyin = surfacePinyin.get(surface);
+            if (pinyin) {
+                term.pinyin = pinyin;
+            }
+            terms.push(term);
         }
     });
 
@@ -3007,6 +3028,13 @@ const Read = ({
         () => (levelMarksEnabled ? levelUnderlineTerms : EMPTY_LEVEL_TERMS),
         [levelMarksEnabled, levelUnderlineTerms]
     );
+    // Pinyin annotations ride on the underlined (level) words, so they only make
+    // sense for Chinese books when the level marks are showing.
+    const readerShowPinyin = (
+        activeBookLanguage === 'zh'
+        && Boolean(settings.pinyinAnnotations)
+        && levelMarksEnabled
+    );
     // Legend gradient: interpolate the same three underline stops native draws
     // (easy → mid → hard) into a smooth bar, so the swatch matches the page.
     const underlineLegendColors = useMemo(
@@ -3264,6 +3292,7 @@ const Read = ({
                         readerEdgeStateEnabled={false}
                         highlightTerms={readerHighlightTerms}
                         levelTerms={readerLevelTerms}
+                        showPinyin={readerShowPinyin}
                         clearSelectionToken={clearSelectionToken}
                         focusSentenceCount={focusSpan}
                         focusSwipeEnabled={focusSwipe}
@@ -3633,6 +3662,36 @@ const Read = ({
                                         </View>
                                     ) : null}
                                 </View>
+
+                                {/* Pinyin over marked words — Chinese only, and only
+                                    meaningful when the vocabulary marks are showing. */}
+                                {activeBookLanguage === 'zh' && levelMarksEnabled ? (
+                                    <View style={styles.markStyleBlock}>
+                                        <Text style={styles.fontSettingsLabel}>{t('read.pinyinAnnotations')}</Text>
+                                        <View style={styles.segmentGroup}>
+                                            {[false, true].map((value) => {
+                                                const selected = Boolean(settings.pinyinAnnotations) === value;
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={String(value)}
+                                                        style={[styles.segmentButton, selected && styles.segmentButtonActive]}
+                                                        onPress={() => handleSettingChange('pinyinAnnotations', value)}
+                                                        activeOpacity={0.7}
+                                                        accessibilityRole="button"
+                                                        accessibilityState={{ selected }}
+                                                    >
+                                                        <Text
+                                                            style={[styles.segmentButtonText, selected && styles.segmentButtonTextActive]}
+                                                            numberOfLines={1}
+                                                        >
+                                                            {value ? t('read.pinyinOn') : t('read.pinyinOff')}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+                                    </View>
+                                ) : null}
                             </View>
 
                             <View style={styles.optionsSectionHeader}>

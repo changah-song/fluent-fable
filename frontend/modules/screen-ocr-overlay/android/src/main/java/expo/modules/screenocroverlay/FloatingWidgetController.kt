@@ -347,6 +347,10 @@ class FloatingWidgetController(
     resultOverlayView?.invalidate()
   }
 
+  fun handleTargetLanguageChanged() {
+    (bubbleView as? OcrBubbleView)?.invalidate()
+  }
+
   private fun attachDragHandler(view: View, params: WindowManager.LayoutParams) {
     val bubble = view as? OcrBubbleView
     var downRawX = 0f
@@ -547,6 +551,13 @@ private class OcrBubbleView(
     strokeJoin = Paint.Join.ROUND
     style = Paint.Style.STROKE
   }
+  // Draws the target-language badge (한 / 中) so the floating bubble shows, at a
+  // glance, which script the next scan will recognize.
+  private val labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+    color = Color.rgb(250, 248, 245)
+    typeface = Typeface.DEFAULT_BOLD
+    textAlign = Paint.Align.CENTER
+  }
   private val glyphPath = Path()
   private var running = false
   private var dragging = false
@@ -611,8 +622,30 @@ private class OcrBubbleView(
     if (running) {
       drawXIcon(canvas, centerX, centerY, dp(22f) * scale)
     } else {
-      drawGlyph(canvas, centerX, centerY, dp(34f) * scale)
+      val character = languageBadgeCharacter()
+      if (character != null) {
+        drawLanguageBadge(canvas, centerX, centerY, character, dp(30f) * scale)
+      } else {
+        drawGlyph(canvas, centerX, centerY, dp(34f) * scale)
+      }
     }
+  }
+
+  // The character stands in for the active OCR script: Chinese vs Korean. Falls back
+  // to null (the brand glyph) only for languages we don't badge.
+  private fun languageBadgeCharacter(): String? =
+    when (OcrRecognizers.normalizeLanguage(ScreenOcrOverlayService.getTargetLanguage())) {
+      "zh" -> "中"
+      "ko" -> "한"
+      else -> null
+    }
+
+  private fun drawLanguageBadge(canvas: Canvas, centerX: Float, centerY: Float, character: String, size: Float) {
+    labelPaint.color = glyphPaint.color
+    labelPaint.textSize = size
+    val metrics = labelPaint.fontMetrics
+    val baseline = centerY - (metrics.ascent + metrics.descent) / 2f
+    canvas.drawText(character, centerX, baseline, labelPaint)
   }
 
   private fun bubbleDiameter(): Float =

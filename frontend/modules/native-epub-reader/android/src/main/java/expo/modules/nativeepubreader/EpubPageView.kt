@@ -109,6 +109,9 @@ class EpubPageView(context: Context) : View(context) {
   private var activeSelectionKind: ActiveSelectionKind? = null
   private var savedHighlightRanges: List<TextRange> = emptyList()
   private var levelRanges: List<TextRange> = emptyList()
+  // When true, draw each level range's pinyin above the word (Chinese only). The
+  // paginator reserves the vertical room; this view fills it.
+  private var showPinyin: Boolean = false
   private var activeHighlightColor = themePalette.activeHighlightColor
   private var textSelectionHighlightColor = themePalette.textSelectionHighlightColor
   private var savedHighlightColor = themePalette.savedHighlightColor
@@ -116,6 +119,11 @@ class EpubPageView(context: Context) : View(context) {
   private var levelUnderlineEasyColor = themePalette.levelUnderlineEasyColor
   private var levelUnderlineMidColor = themePalette.levelUnderlineMidColor
   private var levelUnderlineHardColor = themePalette.levelUnderlineHardColor
+  // §8: hard+frequent ("reinforced") words are blended toward this calm slate so they
+  // read as "the book will reteach this" rather than "make a flashcard now"; the
+  // salient easy→hard gradient stays for hard+rare ("study") words. v1 is a fixed tone
+  // (not yet a theme token, so it does not swap for dark mode).
+  private val reinforcedUnderlineTint = Color.rgb(0x5b, 0x6b, 0x8c)
   private var onWordSelected: ((WordHit) -> Unit)? = null
   private var onTextSelected: ((TextSelectionHit) -> Unit)? = null
   private var onSelectionCleared: (() -> Unit)? = null
@@ -163,6 +171,11 @@ class EpubPageView(context: Context) : View(context) {
     style = Paint.Style.STROKE
     strokeWidth = dp(1.7f).toFloat()
     strokeCap = Paint.Cap.ROUND
+  }
+  // Pinyin drawn above underlined words. Size/color are set from the body text at
+  // draw time so it tracks the reader font and theme.
+  private val pinyinPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    textAlign = Paint.Align.CENTER
   }
   private val activeHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
     color = activeHighlightColor
@@ -222,8 +235,10 @@ class EpubPageView(context: Context) : View(context) {
     onSelectionDragStateChanged: ((Boolean) -> Unit)?,
     onEdgeAction: ((ReaderEdgeKind) -> Unit)?,
     focusModeEnabled: Boolean = false,
-    onFocusTextTapped: ((String, Int) -> Unit)? = null
+    onFocusTextTapped: ((String, Int) -> Unit)? = null,
+    showPinyin: Boolean = false
   ) {
+    this.showPinyin = showPinyin
     this.page = page
     this.paddingH = paddingH
     this.paddingV = paddingV
@@ -353,6 +368,57 @@ class EpubPageView(context: Context) : View(context) {
     drawTextHighlights(canvas, block, layout, savedHighlightRanges, savedHighlightPaint)
     layout.draw(canvas)
     drawSavedHighlightText(canvas, block, layout, savedHighlightRanges)
+    if (showPinyin) {
+      drawPinyinAnnotations(canvas, block, layout)
+    }
+  }
+
+  // Draw each underlined word's pinyin, centered above the word, into the row of
+  // space the paginator reserved above the line. Chinese only (only level ranges
+  // carry pinyin) and only when the toggle is on.
+  private fun drawPinyinAnnotations(canvas: Canvas, block: PageBlock, layout: StaticLayout) {
+    if (levelRanges.isEmpty()) return
+    val currentPage = page ?: return
+    val blockTextLength = blockTextForSelection(block).length
+    if (blockTextLength <= 0) return
+    val bodyPaint = block.textPaint ?: return
+
+    pinyinPaint.textSize = bodyPaint.textSize * 0.55f
+    pinyinPaint.color = themePalette.subtleTextColor
+    val ascent = bodyPaint.fontMetrics.ascent
+
+    levelRanges.forEach { range ->
+      val pinyin = range.pinyin?.takeIf { it.isNotBlank() } ?: return@forEach
+      if (
+        range.pageIndex != currentPage.pageIndex ||
+        range.spineIndex != currentPage.spineIndex ||
+        range.blockId != block.blockId
+      ) {
+        return@forEach
+      }
+
+      val blockSourceStart = block.sourceStartOffset
+      val blockSourceEnd = blockSourceStart + blockTextLength
+      val localStart = (max(range.sourceStartOffset, blockSourceStart) - blockSourceStart)
+        .coerceIn(0, blockTextLength)
+      val localEnd = (min(range.sourceEndOffset, blockSourceEnd) - blockSourceStart)
+        .coerceIn(localStart, blockTextLength)
+      if (localStart >= localEnd) {
+        return@forEach
+      }
+
+      // Annotate above the first line the word sits on (words rarely wrap).
+      val line = layout.getLineForOffset(localStart)
+      val lineEnd = min(localEnd, layout.getLineEnd(line))
+      val startX = layout.getPrimaryHorizontal(localStart)
+      val endX = layout.getPrimaryHorizontal(max(localStart, lineEnd))
+      val centerX = (min(startX, endX) + max(startX, endX)) / 2f
+
+      // Sit the pinyin's baseline just above the word's glyph tops, in the reserved gap.
+      val glyphTop = layout.getLineBaseline(line) + ascent
+      val baseline = glyphTop - dp(1f) - pinyinPaint.descent()
+      canvas.drawText(pinyin, centerX, baseline, pinyinPaint)
+    }
   }
 
   // Focus mode: draw the whole block dimmed, then re-draw the focused sentence
@@ -912,6 +978,15 @@ class EpubPageView(context: Context) : View(context) {
       return
     }
 
+    val block = renderedTextBlocks[renderedIndex].block
+    // Default the long-press selection to the whole sentence the word sits in,
+    // so the reader immediately sees the entire sentence translated. The drag
+    // handles still let them narrow or widen the range afterward. Falls back to
+    // just the tapped word if no sentence bounds can be resolved.
+    val sentenceBounds = sentenceBoundsAtOffset(block, hit.localStartOffset, hit.localEndOffset)
+    val selStart = sentenceBounds?.first ?: hit.localStartOffset
+    val selEnd = sentenceBounds?.second ?: hit.localEndOffset
+
     isTapCandidate = false
     isSelectionMode = true
     parent?.requestDisallowInterceptTouchEvent(true)
@@ -921,12 +996,20 @@ class EpubPageView(context: Context) : View(context) {
       spineIndex = hit.range.spineIndex,
       blockId = hit.range.blockId,
       renderedIndex = renderedIndex,
-      localStartOffset = hit.localStartOffset,
-      localEndOffset = hit.localEndOffset,
-      sourceStartOffset = hit.range.sourceStartOffset,
-      sourceEndOffset = hit.range.sourceEndOffset
+      localStartOffset = selStart,
+      localEndOffset = selEnd,
+      sourceStartOffset = block.sourceStartOffset + selStart,
+      sourceEndOffset = block.sourceStartOffset + selEnd
     )
-    activeSelectionRanges = listOf(hit.range)
+    activeSelectionRanges = listOf(
+      TextRange(
+        pageIndex = hit.range.pageIndex,
+        spineIndex = hit.range.spineIndex,
+        blockId = hit.range.blockId,
+        sourceStartOffset = block.sourceStartOffset + selStart,
+        sourceEndOffset = block.sourceStartOffset + selEnd
+      )
+    )
     activeSelectionKind = ActiveSelectionKind.TEXT
     activeHighlightPaint.color = activePaintColor()
     invalidate()
@@ -1523,7 +1606,7 @@ class EpubPageView(context: Context) : View(context) {
       }
 
       if (paint === levelMarkPaint) {
-        applyLevelUnderlineShade(paint, range.levelWeight)
+        applyLevelUnderlineShade(paint, range.levelWeight, range.levelReinforced)
         drawLevelUnderline(canvas, layout, localStart, localEnd, blockTextLength, paint)
         return@forEach
       }
@@ -1771,9 +1854,12 @@ class EpubPageView(context: Context) : View(context) {
    * carried by a second, non-chromatic channel too. It is a mitigation, not a
    * substitute for a proper accessible mode.
    */
-  private fun applyLevelUnderlineShade(paint: Paint, weight: Float?) {
+  private fun applyLevelUnderlineShade(paint: Paint, weight: Float?, reinforced: Boolean) {
     val w = (weight ?: 1f).coerceIn(0f, 1f)
-    paint.color = levelColorForWeight(w)
+    val base = levelColorForWeight(w)
+    // §8: a hard-but-frequent word keeps its weight (thickness) but is desaturated
+    // toward the calm slate; a hard+rare word stays on the salient green→red gradient.
+    paint.color = if (reinforced) lerpColor(base, reinforcedUnderlineTint, 0.6f) else base
     paint.strokeWidth = dp(1.4f + (0.8f * w)).toFloat()
   }
 
@@ -1915,6 +2001,46 @@ class EpubPageView(context: Context) : View(context) {
     }
 
     return LocalTokenRange(probe, probe + 1)
+  }
+
+  // Resolve the local [start, end) offsets of the sentence containing the
+  // word at [localStart, localEnd) within the block. Prefers the precomputed
+  // sentenceRanges (the same source focus mode uses); falls back to scanning
+  // for sentence-boundary punctuation. Returns null if nothing sensible is
+  // found so the caller can default to the bare word.
+  private fun sentenceBoundsAtOffset(
+    block: PageBlock,
+    localStart: Int,
+    localEnd: Int
+  ): Pair<Int, Int>? {
+    val blockText = blockTextForSelection(block)
+    if (blockText.isEmpty()) {
+      return null
+    }
+
+    val probe = localStart.coerceIn(0, blockText.length)
+    val match = block.sentenceRanges.firstOrNull { probe in it.first..(it.last + 1) }
+    if (match != null) {
+      val start = match.first.coerceIn(0, blockText.length)
+      val end = (match.last + 1).coerceIn(start, blockText.length)
+      if (start < end) {
+        return start to end
+      }
+    }
+
+    val boundaries = setOf('.', '!', '?', '。', '！', '？', '\n')
+    var start = localStart.coerceIn(0, blockText.length)
+    while (start > 0 && !boundaries.contains(blockText[start - 1])) {
+      start -= 1
+    }
+    var end = localEnd.coerceIn(start, blockText.length)
+    while (end < blockText.length && !boundaries.contains(blockText[end])) {
+      end += 1
+    }
+    if (end < blockText.length && boundaries.contains(blockText[end]) && blockText[end] != '\n') {
+      end += 1
+    }
+    return if (start < end) start to end else null
   }
 
   private fun sentenceForToken(text: String, tokenRange: LocalTokenRange): String {

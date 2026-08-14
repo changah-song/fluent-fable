@@ -20,9 +20,15 @@ import { useAppContext } from '../../contexts/AppContext';
 import { useLocalOwner } from '../../contexts/LocalOwnerContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getSavedWords } from '../../services/Database';
+import { ensureSongPreprocessed, getSongBookUri } from '../../services/songPreprocess';
 import { createNativeReaderThemeTokens, fontFamilies, spacing, textStyles, useTheme } from '../../theme';
 
-const WORD_EDGE_PATTERN = /^[^\u3131-\u318e\uac00-\ud7a3a-zA-Z0-9]+|[^\u3131-\u318e\uac00-\ud7a3a-zA-Z0-9]+$/g;
+// Word characters we treat as tappable/lookup-able across supported targets:
+// Hangul (jamo + syllables), Latin letters, digits, and CJK ideographs
+// (incl. Extension A and the compatibility block) for Chinese.
+const CJK_IDEOGRAPHS = '\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff';
+const WORD_CHARS = `\\u3131-\\u318e\\uac00-\\ud7a3a-zA-Z0-9${CJK_IDEOGRAPHS}`;
+const WORD_EDGE_PATTERN = new RegExp(`^[^${WORD_CHARS}]+|[^${WORD_CHARS}]+$`, 'g');
 const DEFAULT_LYRIC_FONT_SIZE = 28;
 const MIN_LYRIC_FONT_SIZE = 20;
 const MAX_LYRIC_FONT_SIZE = 30;
@@ -49,8 +55,17 @@ const makeSongDraft = (song) => ({
     lyrics: song?.lyrics || '',
 });
 
+// CJK ideographs are emitted one-per-segment (Chinese lyrics rarely use spaces,
+// so a whole run in one tappable token would select the entire line); Hangul,
+// Latin, and digit runs stay grouped as before. On Android the native reader
+// handles word selection, so this JS path only runs on iOS.
+const LYRIC_SEGMENT_PATTERN = new RegExp(
+    `[${CJK_IDEOGRAPHS}]|[\\u3131-\\u318e\\uac00-\\ud7a3a-zA-Z0-9]+|[^${WORD_CHARS}]+`,
+    'g'
+);
+
 const splitLyricSegments = (line = '') => {
-    const segments = String(line || '').match(/[\u3131-\u318e\uac00-\ud7a3a-zA-Z0-9]+|[^\u3131-\u318e\uac00-\ud7a3a-zA-Z0-9]+/g);
+    const segments = String(line || '').match(LYRIC_SEGMENT_PATTERN);
     return (segments || [String(line || '')]).map((text, index) => ({
         id: `segment-${index}`,
         text,
@@ -91,7 +106,7 @@ const SongReader = ({ song, onClose, onSongUpdate, onSongDelete, onSavedTermsCha
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const { targetLanguage, isDarkMode } = useAppContext();
+    const { targetLanguage, chineseScript, interfaceLanguage, isDarkMode } = useAppContext();
     const { activeOwnerId } = useLocalOwner();
     const insets = useSafeAreaInsets();
     const { height: viewportHeight } = useWindowDimensions();
@@ -130,6 +145,26 @@ const SongReader = ({ song, onClose, onSongUpdate, onSongDelete, onSavedTermsCha
             isMounted = false;
         };
     }, [activeOwnerId, targetLanguage]);
+
+    // Preprocess the lyrics once (per content + interface language + script) so
+    // word taps resolve against the local book index instead of paying a remote
+    // stem + dictionary round-trip on every lookup. Fire-and-forget: until this
+    // finishes, taps still work via the live lookup fallback in DictionaryContent.
+    useEffect(() => {
+        if (!song?.id || !song?.lyrics) {
+            return;
+        }
+
+        ensureSongPreprocessed({
+            song,
+            ownerId: activeOwnerId,
+            interfaceLanguage,
+            targetLanguage,
+            script: targetLanguage === 'zh' ? chineseScript : undefined,
+        }).catch((error) => {
+            console.warn('[SongReader] Failed to preprocess song lyrics:', error?.message ?? error);
+        });
+    }, [song?.id, song?.lyrics, activeOwnerId, interfaceLanguage, targetLanguage, chineseScript]);
 
     useEffect(() => {
         setHighlightedWord('');
@@ -513,7 +548,7 @@ const SongReader = ({ song, onClose, onSongUpdate, onSongDelete, onSavedTermsCha
                     onClose={closeLookup}
                     onWordSave={handleWordSave}
                     onWordUnsave={handleWordUnsave}
-                    currentBook={null}
+                    currentBook={getSongBookUri(song?.id)}
                     sourceBook={sourceBook}
                     savedWords={savedWords ?? []}
                 />

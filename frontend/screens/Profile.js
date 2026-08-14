@@ -252,7 +252,7 @@ const Profile = ({ user, signOut, updateUsername }) => {
         setShowInterfaceLanguagePicker(false);
     };
 
-    const activeTargetOptionId = getActiveTargetLanguageOptionId(targetLanguage, chineseScript);
+    const activeTargetOptionId = getActiveTargetLanguageOptionId(targetLanguage);
     const activeTargetOption = TARGET_LANGUAGE_OPTIONS.find((option) => option.id === activeTargetOptionId);
 
     const handleTargetLanguageSelect = (option) => {
@@ -260,8 +260,9 @@ const Profile = ({ user, signOut, updateUsername }) => {
         if (option.id === activeTargetOptionId) {
             return;
         }
-        // Order matters: set the script first so the zh profile/runtime pick it up
-        // when the target language flips to 'zh'.
+        // Chinese is a single option now; a per-script choice can still ride along
+        // (option.chineseScript) but the picker no longer sets one — the panel shows
+        // both Simplified and Traditional regardless.
         if (option.chineseScript) {
             setChineseScript(option.chineseScript);
         }

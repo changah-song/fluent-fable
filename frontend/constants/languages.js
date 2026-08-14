@@ -107,23 +107,19 @@ export const normalizeBookLanguage = (value, fallback = DEFAULT_TARGET_LANGUAGE)
 
 export const isKoreanLanguage = (language) => normalizeBookLanguage(language) === 'ko';
 
-// Options shown in the "learning language" picker. Chinese appears twice —
-// Simplified and Traditional — but both are the same target language ('zh'); they
-// differ only in `chineseScript`, the preferred display script.
+// Options shown in the "learning language" picker. Chinese is a single option:
+// the dictionary indexes both Simplified and Traditional and the definition panel
+// shows both forms, so the learner no longer picks a script here. `chineseScript`
+// stays as an internal display/lookup default (see DEFAULT_CHINESE_SCRIPT).
 export const TARGET_LANGUAGE_OPTIONS = [
   { id: 'ko', targetLanguage: 'ko', label: '한국어' },
-  { id: 'zh-Hans', targetLanguage: 'zh', chineseScript: 'zh-Hans', label: '简体中文' },
-  { id: 'zh-Hant', targetLanguage: 'zh', chineseScript: 'zh-Hant', label: '繁體中文' },
+  { id: 'zh', targetLanguage: 'zh', label: '中文' },
 ];
 
-// Which picker row is currently active, given the stored target language + script.
-export const getActiveTargetLanguageOptionId = (targetLanguage, chineseScript) => {
-  const normalizedTarget = normalizeLanguageCode(targetLanguage);
-  if (normalizedTarget !== 'zh') {
-    return normalizedTarget;
-  }
-  return normalizeChineseScript(chineseScript) === 'zh-Hant' ? 'zh-Hant' : 'zh-Hans';
-};
+// Which picker row is currently active, given the stored target language.
+export const getActiveTargetLanguageOptionId = (targetLanguage) => (
+  normalizeLanguageCode(targetLanguage)
+);
 
 export const getLanguageLabel = (code) => (
   SUPPORTED_LANGUAGES[normalizeLanguageCode(code)] ?? SUPPORTED_LANGUAGES[DEFAULT_TARGET_LANGUAGE]

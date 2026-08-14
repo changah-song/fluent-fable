@@ -19,10 +19,11 @@ import {
 import { explainInContext } from './api/explainInContext';
 import { fetchHanjaRelated } from './api/hanjaRelated';
 import { translateText } from './api/googleTranslate';
-import { addRelatedKnownWord, getRelatedKnownWords, removeRelatedKnownWord } from './Database';
+import { addRelatedKnownWord, getCachedPKnown, getRelatedKnownWords, removeRelatedKnownWord } from './Database';
 import { lookupWordForOverlay, saveOverlayLookupResult, unsaveOverlayLookupResult } from './dictionaryLookup';
 import { getRuntimeInterfaceLanguage, getRuntimeTargetLanguage } from './interfaceLanguage';
 import { getActiveOwnerId } from './localOwnerCoordinator';
+import { getRuntimeActiveProfileId } from './profileScope';
 import { translate } from '../i18n/translations';
 
 let subscriptions = [];
@@ -58,6 +59,44 @@ const overlayLookupEnrichmentCache = new Map();
 let activeOcrPrefetchRun = 0;
 
 const cleanValue = (value) => (typeof value === 'string' ? value.trim() : '');
+
+// Shape stored related-known-words into the backend's anchor_words contract.
+// Mirrors DictionaryContent's `toAnchorWords` so the OCR panel and the reader
+// send grounding in the same form (see OCR-panel-parity note).
+const toAnchorWords = (relatedKnownWords = []) => (
+    (Array.isArray(relatedKnownWords) ? relatedKnownWords : [])
+        .map((entry) => ({
+            word: cleanValue(entry?.korean) || cleanValue(entry?.word),
+            gloss: cleanValue(entry?.definition) || cleanValue(entry?.gloss),
+        }))
+        .filter((entry) => entry.word)
+);
+
+// Best-effort grounding for the agentic explanation workflow: the learner's
+// cached P(known) for this word plus any related-known-word anchors. Each source
+// is optional — a failure or empty result just yields an ungrounded explanation.
+const gatherOverlayExplainGrounding = async (word, language) => {
+    const ownerId = getActiveOwnerId();
+    const profileId = getRuntimeActiveProfileId();
+    const scope = { ownerId, profileId, language };
+
+    const [pKnownResult, anchorsResult] = await Promise.allSettled([
+        getCachedPKnown({ ...scope, word }),
+        getRelatedKnownWords(word, language, { ownerId, profileId }),
+    ]);
+
+    const grounding = {};
+    if (pKnownResult.status === 'fulfilled' && Number.isFinite(pKnownResult.value)) {
+        grounding.pKnown = pKnownResult.value;
+    }
+    if (anchorsResult.status === 'fulfilled') {
+        const anchorWords = toAnchorWords(anchorsResult.value);
+        if (anchorWords.length) {
+            grounding.anchorWords = anchorWords;
+        }
+    }
+    return grounding;
+};
 const lookupCacheKey = ({ selectedText, selectedLineText }) => [
     getRuntimeTargetLanguage(),
     getRuntimeInterfaceLanguage(),
@@ -558,11 +597,15 @@ export const initializeOverlayLookupBridge = () => {
         }
 
         try {
+            const targetLanguage = getRuntimeTargetLanguage();
+            const grounding = await gatherOverlayExplainGrounding(word, targetLanguage);
             const response = await explainInContext({
                 word,
                 sentence: sentence || word,
-                language: getRuntimeTargetLanguage(),
+                language: targetLanguage,
                 interfaceLanguage: getRuntimeInterfaceLanguage(),
+                pKnown: grounding.pKnown,
+                anchorWords: grounding.anchorWords,
             });
             const explanation = cleanValue(response?.explanation);
             await updateOverlayLookup(requestId, {

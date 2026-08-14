@@ -17,30 +17,40 @@ const refreshSessionOnce = () => {
   return pendingRefresh;
 };
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Supabase's own session bootstrap/refresh can hit a transient network error
+// (e.g. device just woke up, brief connectivity blip), which surfaces here as
+// an `error` with no session even though the user is actually logged in. Only
+// retry that case — if Supabase cleanly reports no session (no error), the
+// user is genuinely signed out and retrying won't help.
+const AUTH_SESSION_RETRIES = 2;
+const AUTH_SESSION_RETRY_DELAY_MS = 500;
+
 const getAuthenticatedSession = async ({ refresh = false } = {}) => {
-  if (refresh) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= AUTH_SESSION_RETRIES; attempt += 1) {
     const {
       data: { session },
       error,
-    } = await refreshSessionOnce();
+    } = await (refresh ? refreshSessionOnce() : supabase.auth.getSession());
 
-    if (error || !session?.access_token) {
-      throw new Error('No Supabase session');
+    if (session?.access_token) {
+      return session;
     }
 
-    return session;
+    if (!error) {
+      break;
+    }
+
+    lastError = error;
+    if (attempt < AUTH_SESSION_RETRIES) {
+      await delay(AUTH_SESSION_RETRY_DELAY_MS * (attempt + 1));
+    }
   }
 
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error || !session?.access_token) {
-    throw new Error('No Supabase session');
-  }
-
-  return session;
+  throw lastError instanceof Error ? lastError : new Error('No Supabase session');
 };
 
 const withAuthHeader = (config, accessToken) => {
@@ -60,8 +70,6 @@ api.interceptors.request.use(async (config) => {
 const RETRYABLE_STATUSES = new Set([502, 503, 504]);
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 600;
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 api.interceptors.response.use(undefined, async (error) => {
   const originalRequest = error.config;

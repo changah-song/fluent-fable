@@ -7,6 +7,9 @@ supabase
 
 anthropic
 
+# Agentic explain-in-context workflow (explain_graph.py).
+langgraph
+
 requests
 beautifulsoup4
 lxml
@@ -22,6 +25,9 @@ spacy
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
 opencc-python-reimplemented
+
+# Pinyin generation for Chinese lookups / translations (zh_to_pinyin helper).
+pypinyin
 
 konlpy
 koroman

@@ -37,7 +37,7 @@ class ScreenCaptureSession(
   private val context: Context,
   resultCode: Int,
   data: Intent,
-  language: String?,
+  private val language: String?,
   private val onStopped: () -> Unit
 ) {
   private val captureLock = Any()
@@ -118,6 +118,7 @@ class ScreenCaptureSession(
           result = ocrResult,
           imageWidth = ocrBitmap.width,
           imageHeight = ocrBitmap.height,
+          language = language,
           filterTopChrome = appliedCropBounds == null,
           includeText = OCR_CAPTURE_DEBUG_ENABLED,
           includeBlocks = OCR_CAPTURE_DEBUG_ENABLED,

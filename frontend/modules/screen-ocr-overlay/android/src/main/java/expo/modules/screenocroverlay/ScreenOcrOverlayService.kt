@@ -119,6 +119,12 @@ class ScreenOcrOverlayService : Service() {
     }
   }
 
+  fun handleTargetLanguageChanged() {
+    mainHandler.post {
+      widgetController?.handleTargetLanguageChanged()
+    }
+  }
+
   fun showFloatingWidget(): Boolean {
     return try {
       if (!Settings.canDrawOverlays(this)) {
@@ -1213,7 +1219,11 @@ class ScreenOcrOverlayService : Service() {
 
     fun setTargetLanguage(language: String?) {
       targetLanguage = language
+      // Redraw the floating bubble so its language badge tracks the new mode.
+      activeInstance?.handleTargetLanguageChanged()
     }
+
+    fun getTargetLanguage(): String? = targetLanguage
 
     fun getActiveInstance(): ScreenOcrOverlayService? = activeInstance
 
