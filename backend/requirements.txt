@@ -7,6 +7,11 @@
 # kiwipiepy manually pinned — pip-compile excluded it (no Python 3.14 wheel),
 # but the Docker build uses Python 3.12 where it installs fine.
 kiwipiepy
+# langgraph manually pinned (same reason: local pip-compile runs under Python
+# 3.14; this keeps the lockfile stable). Powers the agentic /explain_in_context
+# graph, now enabled by default (EXPLAIN_USE_GRAPH). Pinned to the version its
+# tests were verified against; its transitive deps resolve at build time.
+langgraph==1.2.11
 annotated-doc==0.0.4
     # via
     #   fastapi

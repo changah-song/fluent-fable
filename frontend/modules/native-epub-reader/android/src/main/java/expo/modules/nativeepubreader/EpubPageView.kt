@@ -386,6 +386,8 @@ class EpubPageView(context: Context) : View(context) {
     pinyinPaint.textSize = bodyPaint.textSize * 0.55f
     pinyinPaint.color = themePalette.subtleTextColor
     val ascent = bodyPaint.fontMetrics.ascent
+    var drawnCount = 0
+    var firstBaseline = -1f
 
     levelRanges.forEach { range ->
       val pinyin = range.pinyin?.takeIf { it.isNotBlank() } ?: return@forEach
@@ -418,6 +420,11 @@ class EpubPageView(context: Context) : View(context) {
       val glyphTop = layout.getLineBaseline(line) + ascent
       val baseline = glyphTop - dp(1f) - pinyinPaint.descent()
       canvas.drawText(pinyin, centerX, baseline, pinyinPaint)
+      if (drawnCount == 0) firstBaseline = baseline
+      drawnCount++
+    }
+    if (drawnCount > 0) {
+      android.util.Log.d("NativeEpubReader", "drawPinyin: block drew $drawnCount, firstBaseline=$firstBaseline, size=${pinyinPaint.textSize}, color=${pinyinPaint.color}")
     }
   }
 

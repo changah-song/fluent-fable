@@ -82,7 +82,49 @@ def test_grounded_prompt_collapses_without_hints():
     )
     assert "already knows" not in prompt
     assert "previous attempt" not in prompt
+    assert "not in the dictionary" not in prompt.lower()
+    assert "dictionary lists these senses" not in prompt.lower()
     assert "<explanation>" in prompt
+
+
+def test_grounded_prompt_includes_dictionary_senses():
+    prompt = g.build_grounded_prompt(
+        target_language_name="Korean",
+        interface_language_name="English",
+        familiarity=g.FAMILIARITY_PARTIAL,
+        dictionary_found=True,
+        dictionary_senses=[
+            {"pos": "noun", "definition": "boat; ship"},
+            {"pos": "noun", "definition": "stomach; belly"},
+            {"definition": ""},  # empty sense is skipped
+        ],
+    )
+    assert "dictionary lists these senses" in prompt.lower()
+    assert "boat; ship" in prompt
+    assert "stomach; belly" in prompt
+    assert "1)" in prompt and "2)" in prompt
+    assert "3)" not in prompt              # the empty sense was skipped
+    assert "if none of them fit" in prompt.lower()
+    assert "not in the dictionary" not in prompt.lower()
+
+
+def test_grounded_prompt_flags_missing_dictionary():
+    prompt = g.build_grounded_prompt(
+        target_language_name="Korean",
+        interface_language_name="English",
+        familiarity=g.FAMILIARITY_UNFAMILIAR,
+        dictionary_found=False,
+        dictionary_senses=[],
+    )
+    assert "not in the dictionary" in prompt.lower()
+    assert "dictionary lists these senses" not in prompt.lower()
+
+
+def test_format_senses_skips_empty_and_caps():
+    assert g._format_senses(None) == ""
+    assert g._format_senses([{"definition": ""}, {"definition": "   "}]) == ""
+    out = g._format_senses([{"definition": f"sense {i}"} for i in range(10)], limit=3)
+    assert out.count("\n") == 2  # exactly 3 lines
 
 
 # ─── Graph workflow (needs langgraph) ─────────────────────────────────────────
@@ -94,7 +136,8 @@ GOOD = (
     "<explanation>Here 갔어 is the past tense of 가다; she left.</explanation>"
 )
 BAD_GLOSS = (
-    "<lemma>가다</lemma><gloss>to go somewhere far over there</gloss>"
+    # 8 words — over _MAX_GLOSS_WORDS (6), so verify must flag it as too long.
+    "<lemma>가다</lemma><gloss>to go to a place far far away</gloss>"
     "<explanation>It means to leave, past tense.</explanation>"
 )
 MISSING_LEMMA = "<gloss>to go</gloss><explanation>It means to leave here.</explanation>"

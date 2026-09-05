@@ -504,15 +504,22 @@ const DictionaryContent = ({
                 pKnown,
                 hanja: grounding.hanja,
                 anchorWords: grounding.anchorWords,
+                dictionary: grounding.dictionary,
             });
             const text = cleanValue(response?.explanation);
             const gloss = cleanValue(response?.gloss);
             const lemma = cleanValue(response?.lemma);
             const pinyin = cleanValue(response?.pinyin);
+            // Prefer the client's own dictionary signal: it is authoritative
+            // (our bundled dictionary) and, unlike the server's echoed flag,
+            // survives a lookup_cache hit — the cache only stores lemma/gloss/
+            // explanation, so response.not_in_dictionary is dropped on hits.
+            const notInDictionary = grounding?.dictionary?.found === false
+                || response?.not_in_dictionary === true;
             setExplainData((prev) => ({
                 ...prev,
                 [key]: text
-                    ? { loading: false, text, gloss, lemma, pinyin, error: null }
+                    ? { loading: false, text, gloss, lemma, pinyin, notInDictionary, error: null }
                     : { loading: false, text: '', gloss: '', lemma: '', pinyin: '', error: t('lookup.explainFailed') },
             }));
         } catch (error) {
@@ -952,6 +959,35 @@ const DictionaryContent = ({
         };
     }, [activeLookupItem, liveEntryMeta, lookupWord]);
     const activeLookupHanja = activeLookupDetails.hanja;
+    // The dictionary result already on screen, reshaped as grounding for the
+    // in-context AI. `found` is false when we have no definition to show — that
+    // is the authoritative "not in dictionary" signal, since it is our own
+    // bundled dictionary. Deduped by definition so repeated senses don't bloat
+    // the prompt.
+    const activeDictionaryGrounding = useMemo(() => {
+        const item = activeLookupItem;
+        if (!item) {
+            return { found: false, senses: [] };
+        }
+        const entries = [];
+        if (item.cachedEntry) entries.push(item.cachedEntry);
+        if (Array.isArray(item.liveEntries)) entries.push(...item.liveEntries);
+        const senses = [];
+        const seen = new Set();
+        entries.forEach((entry) => {
+            const definition = getEntryDefinition(entry);
+            if (!definition) return;
+            const dedupeKey = definition.toLowerCase();
+            if (seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+            senses.push({
+                headword: getEntryWord(entry, ''),
+                pos: getEntryPos(entry),
+                definition,
+            });
+        });
+        return { found: senses.length > 0, senses };
+    }, [activeLookupItem]);
     const canExpandCurrentLookup = (
         (isKoreanBook && hasHanja(activeLookupHanja))
         || (isEnglishBook && hasRenderableWordParts(activeLookupDetails.wordParts, activeLookupDetails.word))
@@ -1023,6 +1059,24 @@ const DictionaryContent = ({
             ? getEntryWord(entry, activeLookupItem.stem || lookupWord)
             : (activeLookupItem?.stem || lookupWord);
         fetchZhReadings(word);
+    }, [isChineseBook, isPanelExpanded, activeLookupItem, lookupWord]);
+
+    // Expanding a multi-character Chinese word also fetches each individual
+    // character so the breakdown ("view characters") can list per-glyph pinyin +
+    // definition. Single-character words have nothing to break down, so we skip them.
+    useEffect(() => {
+        if (!isChineseBook || !isPanelExpanded) {
+            return;
+        }
+        const entry = activeLookupItem?.cachedEntry;
+        const word = cleanValue(entry
+            ? getEntryWord(entry, activeLookupItem.stem || lookupWord)
+            : (activeLookupItem?.stem || lookupWord));
+        const chars = Array.from(word).filter((ch) => HANJA_RE.test(ch));
+        if (chars.length < 2) {
+            return;
+        }
+        chars.forEach((ch) => fetchZhReadings(ch));
     }, [isChineseBook, isPanelExpanded, activeLookupItem, lookupWord]);
 
     // Follow "variant of X" / "see X" references: fetch X so its real definition can
@@ -1678,6 +1732,9 @@ const DictionaryContent = ({
             && simplifiedText
             && traditionalText
             && simplifiedText !== traditionalText;
+        // When a Chinese word differs across scripts, fold both forms into the
+        // headword itself as "simplified / traditional" rather than a separate row.
+        const headwordText = showBothScripts ? `${simplifiedText} / ${traditionalText}` : word;
 
         return (
             <View style={styles.entryHeading}>
@@ -1685,7 +1742,7 @@ const DictionaryContent = ({
                     {renderHeadwordChevron('previous')}
                     <View style={styles.wordLine}>
                         <Text selectable style={[styles.entryWord, isChineseBook && styles.zhEntryWord, { color: palette.text }]}>
-                            {word}
+                            {headwordText}
                         </Text>
                         {hanjaElement}
                         {pronunciationText ? (
@@ -1703,18 +1760,6 @@ const DictionaryContent = ({
                     </View>
                     {renderHeadwordChevron('next')}
                 </View>
-                {showBothScripts ? (
-                    <View style={styles.zhScriptsRow}>
-                        <View style={styles.zhScriptItem}>
-                            <Text style={[styles.zhScriptLabel, { color: palette.mutedText }]}>简</Text>
-                            <Text selectable style={[styles.zhScriptForm, { color: palette.secondaryText }]}>{simplifiedText}</Text>
-                        </View>
-                        <View style={styles.zhScriptItem}>
-                            <Text style={[styles.zhScriptLabel, { color: palette.mutedText }]}>繁</Text>
-                            <Text selectable style={[styles.zhScriptForm, { color: palette.secondaryText }]}>{traditionalText}</Text>
-                        </View>
-                    </View>
-                ) : null}
                 {pronunciationControls ? (
                     <View style={styles.entryMetaRow}>
                         {pronunciationControls}
@@ -2019,6 +2064,19 @@ const DictionaryContent = ({
                     <Text style={[styles.explainBodyTitle, { color: palette.mutedText }]}>
                         {t('lookup.explainInThisSentence')}
                     </Text>
+                    {data.text && data.notInDictionary ? (
+                        <View style={[styles.notInDictionaryBadge, { borderColor: palette.border }]}>
+                            <MaterialIcons
+                                name="info-outline"
+                                size={11}
+                                color={palette.mutedText}
+                                style={styles.notInDictionaryIcon}
+                            />
+                            <Text style={[styles.notInDictionaryText, { color: palette.mutedText }]}>
+                                {t('lookup.notInDictionary')}
+                            </Text>
+                        </View>
+                    ) : null}
                     {data.loading ? (
                         <View style={styles.explainLoadingRow}>
                             <ActivityIndicator size="small" color={palette.action} />
@@ -2058,6 +2116,7 @@ const DictionaryContent = ({
                 onPress={() => handleSmartDefinitionPress(explainKey, {
                     hanja: activeLookupHanja || null,
                     anchorWords: toAnchorWords(relatedKnownByWord[explainKey]),
+                    dictionary: activeDictionaryGrounding,
                 })}
                 activeOpacity={0.7}
                 accessibilityRole="button"
@@ -2195,6 +2254,57 @@ const DictionaryContent = ({
         );
     };
 
+    // Per-character breakdown shown when a multi-character Chinese word is expanded:
+    // one row per glyph with its (primary) pinyin and definition, fetched into
+    // zhReadings by the effect above.
+    const renderChineseCharacterBreakdown = (rawWord) => {
+        const chars = Array.from(cleanValue(rawWord)).filter((ch) => HANJA_RE.test(ch));
+        if (chars.length < 2) {
+            return null;
+        }
+        return (
+            <View style={[styles.zhCharSection, { borderTopColor: palette.border }]}>
+                <Text style={[styles.zhCharSectionTitle, { color: palette.mutedText }]}>
+                    {t('lookup.characters')}
+                </Text>
+                {chars.map((ch, index) => {
+                    const raw = zhReadings[ch];
+                    const readings = Array.isArray(raw) ? dedupeZhReadings(raw) : [];
+                    const primary = readings[0] || null;
+                    const senses = primary ? resolveZhVariantSenses(primary.senses) : [];
+                    const isLoading = raw === 'loading' || raw === undefined;
+                    return (
+                        <View
+                            key={`${ch}-${index}`}
+                            style={[
+                                styles.zhCharRow,
+                                index > 0 && { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
+                            ]}
+                        >
+                            <View style={styles.zhCharLead}>
+                                <Text selectable style={[styles.zhCharGlyph, { color: palette.text }]}>{ch}</Text>
+                                {primary?.pinyin ? (
+                                    <Text selectable style={[styles.zhCharPinyin, { color: palette.text }]}>
+                                        {primary.pinyin}
+                                    </Text>
+                                ) : null}
+                            </View>
+                            <View style={styles.zhCharSenses}>
+                                {senses.length > 0 ? (
+                                    renderZhSenses(senses, palette.secondaryText)
+                                ) : (
+                                    <Text style={[styles.zhSenseText, { color: palette.emptyText }]}>
+                                        {isLoading ? '…' : t('lookup.noDictionaryEntry')}
+                                    </Text>
+                                )}
+                            </View>
+                        </View>
+                    );
+                })}
+            </View>
+        );
+    };
+
     const renderPrimaryEntry = ({
         key,
         word,
@@ -2243,6 +2353,7 @@ const DictionaryContent = ({
                     isChineseBook ? (
                         <View style={styles.zhBody}>
                             {renderChineseBody(zhData)}
+                            {isPanelExpanded ? renderChineseCharacterBreakdown(cleanValue(word)) : null}
                         </View>
                     ) : (
                     <>
@@ -2795,32 +2906,6 @@ const createStyles = (colors) => StyleSheet.create({
         letterSpacing: 0.2,
         textAlign: 'left',
     },
-    // Row under the headword showing the word in BOTH scripts (Simplified +
-    // Traditional), each with a small 简/繁 label, shown only when the forms differ.
-    zhScriptsRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        columnGap: 16,
-        rowGap: 2,
-        marginTop: 4,
-    },
-    zhScriptItem: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        columnGap: 5,
-    },
-    zhScriptLabel: {
-        fontFamily: fontFamilies.sansSemiBold,
-        fontSize: 12,
-        lineHeight: 20,
-    },
-    zhScriptForm: {
-        fontFamily: fontFamilies.sansSemiBold,
-        fontSize: 17,
-        lineHeight: 24,
-    },
     zhBody: {
         width: '100%',
         paddingTop: 4,
@@ -2893,6 +2978,52 @@ const createStyles = (colors) => StyleSheet.create({
     zhReadingSenses: {
         flex: 1,
     },
+    // Per-character breakdown revealed on expand: a titled section with one row per
+    // glyph (character + pinyin on the left, senses on the right).
+    zhCharSection: {
+        width: '100%',
+        gap: 4,
+        paddingTop: spacing.sm,
+        marginTop: spacing.xs,
+        borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    zhCharSectionTitle: {
+        ...textStyles.caption,
+        fontFamily: fontFamilies.sansBold,
+        fontSize: 10,
+        lineHeight: 13,
+        letterSpacing: 0,
+        textAlign: 'center',
+        textTransform: 'uppercase',
+        marginBottom: 2,
+    },
+    zhCharRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        paddingVertical: 9,
+    },
+    zhCharLead: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 6,
+        minWidth: 78,
+        flexShrink: 0,
+    },
+    zhCharGlyph: {
+        fontFamily: fontFamilies.krSerifSemiBold,
+        fontSize: 22,
+        lineHeight: 28,
+    },
+    zhCharPinyin: {
+        fontFamily: fontFamilies.sansBold,
+        fontSize: 15,
+        lineHeight: 24,
+        letterSpacing: 0.2,
+    },
+    zhCharSenses: {
+        flex: 1,
+    },
     explainSection: {
         width: '100%',
         marginTop: spacing.sm,
@@ -2935,6 +3066,25 @@ const createStyles = (colors) => StyleSheet.create({
         fontSize: 15,
         lineHeight: 23,
         letterSpacing: 0,
+    },
+    notInDictionaryBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 4,
+        marginBottom: 8,
+        paddingVertical: 2,
+        paddingHorizontal: 7,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 10,
+    },
+    notInDictionaryIcon: {
+        opacity: 0.8,
+    },
+    notInDictionaryText: {
+        fontFamily: fontFamilies.sansMedium,
+        fontSize: 10,
+        letterSpacing: 0.3,
     },
     explainLoadingRow: {
         flexDirection: 'row',

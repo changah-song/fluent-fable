@@ -968,11 +968,15 @@ LOOKUP_CACHE_MAX_ROWS = 100_000
 # When on, /explain_in_context/ runs the multi-step agentic LangGraph workflow
 # (ground -> draft -> verify -> refine) instead of the single-shot model call.
 # Default off so production is unchanged until deliberately enabled.
-EXPLAIN_USE_GRAPH = os.getenv("EXPLAIN_USE_GRAPH", "").strip().lower() in (
-    "1",
-    "true",
-    "yes",
-    "on",
+# On by default: the agentic graph (ground → draft → verify → refine) is now the
+# production path for /explain_in_context. Set EXPLAIN_USE_GRAPH=off (or 0/false/
+# no) to fall back to the single-shot flat path as a kill-switch.
+EXPLAIN_USE_GRAPH = os.getenv("EXPLAIN_USE_GRAPH", "on").strip().lower() not in (
+    "0",
+    "false",
+    "no",
+    "off",
+    "",
 )
 
 # Compiled lazily on first use so the langgraph dependency is only required when
@@ -2709,13 +2713,20 @@ def lookup_zh_dictionary_entries(
     conn = get_zh_dict_db_connection()
     unique_stems = list(dict.fromkeys(normalized_stems))
     placeholders = ",".join(["?"] * len(unique_stems))
+    # frequency_rank is really just CC-CEDICT line order (no true frequency signal),
+    # and CC-CEDICT lists a character's proper-noun/surname sense (capitalized pinyin,
+    # e.g. "Bié — surname Bie") on the line just before its common sense ("bié — to
+    # leave; to part"). With limit_per_stem=1 that made 别/三/东/也/王 etc. show
+    # "surname X" as their whole definition. Sort proper-noun readings (uppercase
+    # pinyin initial) last so the substantive sense wins the primary slot; the
+    # surname reading still appears when the panel is expanded.
     rows = conn.execute(
         f"""
         SELECT simplified, traditional, pinyin, definition
         FROM zh_dictionary
         WHERE simplified IN ({placeholders})
            OR traditional IN ({placeholders})
-        ORDER BY frequency_rank ASC, id ASC
+        ORDER BY (COALESCE(pinyin_numbers, '') GLOB '[A-Z]*') ASC, frequency_rank ASC, id ASC
         """,
         [*unique_stems, *unique_stems],
     ).fetchall()
@@ -4516,6 +4527,49 @@ def parse_contextual_explanation(raw: str) -> dict[str, str | None]:
 _MAX_ANCHOR_WORDS = 6
 _MAX_ANCHOR_FIELD_LEN = 40
 
+# Dictionary grounding: the client forwards the on-device lookup it already did.
+_MAX_DICT_SENSES = 6
+_MAX_DICT_HEADWORD_LEN = 60
+_MAX_DICT_POS_LEN = 24
+_MAX_DICT_DEFINITION_LEN = 300
+
+
+def _sanitize_dictionary_grounding(raw) -> "tuple[bool | None, list[dict]]":
+    """Coerce the payload's ``dictionary`` grounding into (found, senses).
+
+    Expected shape: ``{"found": bool, "senses": [{headword, pos, definition}]}``.
+    ``found`` is the client's own "did my on-device lookup return anything" flag;
+    it is the authoritative source for the not-in-dictionary badge (it is *our*
+    dictionary). Returns ``(None, [])`` when the field is absent or malformed, so
+    the graph simply degrades to the ungrounded dictionary behaviour.
+    """
+    if not isinstance(raw, dict):
+        return None, []
+    found = raw.get("found")
+    found = bool(found) if isinstance(found, bool) else None
+    senses_raw = raw.get("senses")
+    senses: list[dict] = []
+    if isinstance(senses_raw, list):
+        for item in senses_raw:
+            if not isinstance(item, dict):
+                continue
+            definition = item.get("definition")
+            definition = definition.strip()[:_MAX_DICT_DEFINITION_LEN] if isinstance(definition, str) else ""
+            if not definition:
+                continue
+            headword = item.get("headword")
+            headword = headword.strip()[:_MAX_DICT_HEADWORD_LEN] if isinstance(headword, str) else ""
+            pos = item.get("pos")
+            pos = pos.strip()[:_MAX_DICT_POS_LEN] if isinstance(pos, str) else ""
+            senses.append({"headword": headword, "pos": pos, "definition": definition})
+            if len(senses) >= _MAX_DICT_SENSES:
+                break
+    # If the client sent senses but no explicit found flag, the presence of
+    # senses implies found=True.
+    if found is None and senses:
+        found = True
+    return found, senses
+
 
 def _sanitize_anchor_words(raw) -> list[dict]:
     """Coerce the payload's anchor_words into a clean [{word, gloss}] list.
@@ -4589,6 +4643,10 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
     hanja = payload.get("hanja")
     hanja = hanja.strip() if isinstance(hanja, str) and hanja.strip() else None
     anchor_words = _sanitize_anchor_words(payload.get("anchor_words"))
+    # The client already looked this word up on-device; reuse that result to
+    # ground the explanation instead of re-querying. Shared across users for the
+    # same word, so — unlike anchor_words — it does not bust the response cache.
+    dictionary_found, dictionary_senses = _sanitize_dictionary_grounding(payload.get("dictionary"))
 
     # Known-word anchors are per-learner, so an anchored explanation must never be
     # shared through the global cache.
@@ -4605,6 +4663,14 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
     if not personalized:
         cached = await asyncio.to_thread(_lookup_cache_get, cache_key)
         if cached is not None:
+            # lookup_cache stores only lemma/gloss/explanation, so re-derive the
+            # fields that live outside its schema before returning — otherwise a
+            # cache hit silently drops them. pinyin is deterministic from the
+            # lemma (no model call); not_in_dictionary comes from the request.
+            # Keeps a hit's response shape identical to a miss.
+            if target_language == "zh":
+                cached["pinyin"] = zh_to_pinyin(cached.get("lemma") or word)
+            cached["not_in_dictionary"] = dictionary_found is False
             return cached
 
     # Only reached on a cache miss — i.e. we're about to spend on the model.
@@ -4630,6 +4696,8 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
                 word_difficulty=word_difficulty,
                 hanja=hanja,
                 anchor_words=anchor_words,
+                dictionary_found=dictionary_found,
+                dictionary_senses=dictionary_senses,
             )
         except Exception as error:
             print(f"[explain_in_context] Graph workflow error: {error.__class__.__name__}: {error}")
@@ -4673,6 +4741,12 @@ async def explain_in_context(payload: dict, auth: dict[str, Any] = Depends(verif
 
     if not parsed["explanation"]:
         raise HTTPException(status_code=502, detail="AI returned an empty explanation")
+
+    # Surface the not-in-dictionary state so the panel can show a quiet badge.
+    # Derived from the client's own on-device lookup (authoritative for our
+    # bundled dictionary), not the model — more reliable than asking the LLM.
+    # It is a stable function of the word, so it rides the cache safely.
+    parsed["not_in_dictionary"] = dictionary_found is False
 
     # Chinese: attach tone-marked pinyin for the base form (falling back to the
     # tapped word) so the panel can show it next to the gloss and the learner can

@@ -10,6 +10,10 @@ export const explainInContext = async ({
   pKnown,
   hanja,
   anchorWords,
+  // The dictionary result the panel already fetched on-device, reused to ground
+  // the explanation (no re-query). Shape: { found: boolean, senses: [{ headword,
+  // pos, definition }] }. Omittable — absent means "no dictionary signal".
+  dictionary,
   timeout = 30000,
 } = {}) => {
   const response = await api.post(
@@ -24,6 +28,7 @@ export const explainInContext = async ({
       ...(Number.isFinite(pKnown) ? { p_known: pKnown } : {}),
       ...(hanja ? { hanja } : {}),
       ...(Array.isArray(anchorWords) && anchorWords.length ? { anchor_words: anchorWords } : {}),
+      ...(dictionary ? { dictionary } : {}),
     },
     {
       timeout,

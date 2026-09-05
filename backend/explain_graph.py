@@ -143,6 +143,8 @@ def build_grounded_prompt(
     familiarity: str,
     hanja: str | None = None,
     anchor_words: list[dict] | None = None,
+    dictionary_found: bool | None = None,
+    dictionary_senses: list[dict] | None = None,
     issues: list[str] | None = None,
 ) -> str:
     """System prompt for the draft/refine nodes, layered with grounding.
@@ -174,6 +176,28 @@ def build_grounded_prompt(
             "(e.g. \"like X, but ...\"). Never force a connection that is not real."
         )
 
+    # Dictionary grounding. The client already looked this word up on-device, so
+    # we reuse that result rather than re-querying: pass the senses it found, or
+    # tell the model the dictionary came up empty. Two branches, matching why a
+    # learner reaches for the AI explanation in the first place — either the
+    # dictionary entry exists but its fit is unclear, or there is no entry at all.
+    senses = _format_senses(dictionary_senses)
+    if senses:
+        lines.append(
+            "The dictionary lists these senses for this word:\n"
+            f"{senses}\n"
+            "Pick the sense that fits THIS sentence and explain how it applies. "
+            "If none of them fit, say so plainly and explain the actual meaning "
+            "from context — the dictionary can be incomplete or wrong."
+        )
+    elif dictionary_found is False:
+        lines.append(
+            "This word is NOT in the dictionary — it may be slang, archaic, a "
+            "rare or dialectal form, a proper noun, or a coinage. Explain it from "
+            "the sentence context, and briefly note that it isn't a standard "
+            "dictionary entry."
+        )
+
     if issues:
         lines.append(
             "A previous attempt had these problems: "
@@ -202,6 +226,30 @@ def _format_anchor_words(anchor_words: list[dict] | None, limit: int = 4) -> str
     return ", ".join(formatted)
 
 
+def _format_senses(dictionary_senses: list[dict] | None, limit: int = 6) -> str:
+    """Render the client's already-fetched dictionary senses as a numbered list.
+
+    Each sense is ``{headword, pos, definition}`` (all optional). Senses with no
+    definition carry no meaning, so they are skipped; an all-empty list returns
+    "" and the prompt's dictionary block collapses.
+    """
+    if not dictionary_senses:
+        return ""
+    lines: list[str] = []
+    for item in dictionary_senses:
+        if not isinstance(item, dict):
+            continue
+        definition = str(item.get("definition") or "").strip()
+        if not definition:
+            continue
+        pos = str(item.get("pos") or "").strip()
+        prefix = f"[{pos}] " if pos else ""
+        lines.append(f"{len(lines) + 1}) {prefix}{definition}")
+        if len(lines) >= limit:
+            break
+    return "\n".join(lines)
+
+
 # ─── Graph state + nodes ──────────────────────────────────────────────────────
 
 
@@ -215,6 +263,9 @@ class ExplainState(TypedDict, total=False):
     word_difficulty: float | None
     hanja: str | None
     anchor_words: list[dict]
+    # Dictionary result the client already fetched on-device (reused, not re-queried).
+    dictionary_found: bool | None
+    dictionary_senses: list[dict]
     # Derived by ``ground``
     p_known: float | None
     familiarity: str
@@ -290,6 +341,8 @@ def build_explain_graph(model_caller: ModelCaller):
             familiarity=state.get("familiarity", FAMILIARITY_UNKNOWN),
             hanja=state.get("hanja"),
             anchor_words=state.get("anchor_words"),
+            dictionary_found=state.get("dictionary_found"),
+            dictionary_senses=state.get("dictionary_senses"),
             issues=issues,
         )
         raw, usage = model_caller(system_prompt, _user_message(state))
@@ -335,11 +388,16 @@ def run_explain_graph(
     word_difficulty: Any = None,
     hanja: str | None = None,
     anchor_words: list[dict] | None = None,
+    dictionary_found: bool | None = None,
+    dictionary_senses: list[dict] | None = None,
 ) -> dict:
     """Invoke the compiled graph and return the parsed result + spend usages.
 
     ``p_known`` (0..1) is the preferred familiarity signal; when absent it is
-    derived from ``theta`` and ``word_difficulty``. Returns
+    derived from ``theta`` and ``word_difficulty``. ``dictionary_found`` /
+    ``dictionary_senses`` carry the on-device lookup the client already did:
+    senses ground the model toward the right meaning, and ``found=False`` tells
+    it the word is not a standard dictionary entry. Returns
     ``{lemma, gloss, explanation, familiarity, usages}`` — ``usages`` holds one
     entry per model call so the caller can record spend for each.
     """
@@ -354,6 +412,8 @@ def run_explain_graph(
             "word_difficulty": word_difficulty,
             "hanja": hanja,
             "anchor_words": anchor_words or [],
+            "dictionary_found": dictionary_found,
+            "dictionary_senses": dictionary_senses or [],
         }
     )
     return {

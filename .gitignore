@@ -8,3 +8,8 @@ __pycache__/
 nikl_balanced_corpus/
 *.aab
 *.apk
+
+# Environment secrets — never commit real values (keep .env.example tracked)
+.env
+.env.local
+.env.*.local

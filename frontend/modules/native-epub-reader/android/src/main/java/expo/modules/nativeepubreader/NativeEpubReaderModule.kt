@@ -1094,6 +1094,7 @@ class NativeEpubReaderView(
       return
     }
     showPinyin = enabled
+    Log.d(TAG, "setShowPinyin: $enabled")
     // The adapter is reused across repaginations (only created when null), so its
     // own showPinyin flag won't pick up the change unless we push it here.
     pageAdapter?.setShowPinyin(enabled)

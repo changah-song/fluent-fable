@@ -8,6 +8,7 @@ import {
     normalizeBookLanguage,
     normalizeInterfaceLanguageCode,
     getInterfaceLanguageLabel,
+    getLanguageLabel,
 } from '../../../constants/languages';
 import { fontFamilies, spacing, useTheme } from '../../../theme';
 import TranslationContent from './TranslationContent';
@@ -259,7 +260,10 @@ const TopSection = ({
     const translationText = translationTarget || visibleWord;
     const translationSourceLanguage = dictionaryBookLanguage;
     const translationTargetLanguage = normalizeInterfaceLanguageCode(interfaceLanguage);
-    const translationSourceLabel = getInterfaceLanguageLabel(translationSourceLanguage);
+    // The source is the book/target language (ko, zh) — use the target-language
+    // label map, not the interface-language one, which would fall back to
+    // English for any code (like 'ko') that isn't a supported UI language.
+    const translationSourceLabel = getLanguageLabel(translationSourceLanguage);
     const translationTargetLabel = getInterfaceLanguageLabel(translationTargetLanguage);
     const sheetSizeStyle = isTranslationMode
         ? styles.sheetTranslation
@@ -346,7 +350,9 @@ const TopSection = ({
                 <View style={styles.sheetHandleWrap} {...panResponder.panHandlers}>
                     <View style={styles.sheetHandle} />
                     {!isLookupExpanded ? (
-                        <Text style={styles.sheetGestureHint}>{t('read.slideUpForRoots')}</Text>
+                        <Text style={styles.sheetGestureHint}>
+                            {t(isChineseDictionarySheet ? 'read.slideUpForChars' : 'read.slideUpForRoots')}
+                        </Text>
                     ) : null}
                 </View>
             ) : null}
@@ -402,7 +408,9 @@ const TopSection = ({
             {isTopPlacement && !isTranslationMode && canExpandLookup ? (
                 <View style={styles.sheetHandleWrapBottom} {...panResponder.panHandlers}>
                     {!isLookupExpanded ? (
-                        <Text style={styles.sheetGestureHint}>{t('read.slideDownForRoots')}</Text>
+                        <Text style={styles.sheetGestureHint}>
+                            {t(isChineseDictionarySheet ? 'read.slideDownForChars' : 'read.slideDownForRoots')}
+                        </Text>
                     ) : null}
                     <View style={styles.sheetHandle} />
                 </View>

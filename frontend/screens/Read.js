@@ -48,6 +48,7 @@ import {
 } from '../services/Database';
 import { deriveCandidateReason, pickExampleSentence } from '../services/wordCandidates';
 import { findActiveBookmark } from '../services/bookmarks';
+import { tapSelect, tapCommit, tapUndo } from '../services/haptics';
 import BeforeYouGoSheet from '../components/Read/BeforeYouGoSheet';
 import SavedWordsPanel from '../components/Read/SavedWordsPanel';
 import NotesLogSheet from '../components/Read/NotesLogSheet';
@@ -1037,6 +1038,8 @@ const Read = ({
     const handleWordSave = useCallback((word, options = {}) => {
         const { includeSurface = true } = options;
         const surface = includeSurface ? highlightedWord?.trim() : '';
+        // A firmer click for committing a word to your deck — you feel it land.
+        tapCommit();
         setSavedWords(prev => uniqTerms([...(prev ?? []), word]));
         setOptimisticHighlightTerms((prev) => {
             return uniqTerms([
@@ -1051,6 +1054,8 @@ const Read = ({
     const handleWordUnsave = useCallback((word, options = {}) => {
         const { includeSurface = true } = options;
         const surface = includeSurface ? highlightedWord?.trim() : '';
+        // A gentler tick for the undo — lighter than the save on purpose.
+        tapUndo();
         setSavedWords(prev => (prev ?? []).filter(w => w !== word));
         setOptimisticHighlightTerms(prev => prev.filter(term => term !== word && term !== surface));
     }, [highlightedWord]);
@@ -1083,6 +1088,10 @@ const Read = ({
             dismissPanelRef.current?.();
             return;
         }
+
+        // A genuine new selection (not a panel dismiss): a whisper-light tick so
+        // the lookup feels physical the instant you touch a word.
+        tapSelect();
 
         const sentence = typeof event.sentence === 'string' ? event.sentence.trim() : '';
 
